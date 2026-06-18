@@ -1,0 +1,51 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="1" tvg-name="CNN International" tvg-logo="https://i.imgur.com/jlEaRt4.png" group-title="News" tvg-language="English" tvg-chno="101 HD",CNN International
+https://liveproduseast.akamaized.net/us/Channel-USTV-AWS-virginia-1/Source-live-1/AWS-USTV-virginia-1-live.m3u8
+#EXTINF:-1 tvg-id="2" tvg-name="BBC World News" tvg-logo="https://i.imgur.com/k9JbWdJ.png" group-title="News" tvg-language="English",BBC World News
+https://bcovlive-a.akamaized.net/45e1c017e8c3426c8991f2b8455c5a68/us-east-1/6178877219001/profile_0/chunklist.m3u8
+#EXTINF:-1 tvg-id="3" tvg-name="Al Jazeera English" tvg-logo="https://i.imgur.com/NqgJ9f6.png" group-title="World News" tvg-language="English",Al Jazeera English
+https://live-hls-web-aje.getaj.net/AJE/index.m3u8
+#EXTINF:-1 tvg-id="4" tvg-name="EuroNews" tvg-logo="https://i.imgur.com/6VwYr5j.png" group-title="World News" tvg-language="French",EuroNews
+https://euronews.akamaized.net/hls/live/1043094/euronews/ewns/3045633/master.m3u8
+#EXTINF:-1 tvg-id="5" tvg-name="Fox News" tvg-logo="https://i.imgur.com/JXGK1r9.png" group-title="News" tvg-language="English" tvg-chno="202 HD",Fox News
+https://foxnews-lh.akamaized.net/i/ch01_0@93547/master.m3u8
+#EXTINF:-1 tvg-id="6" tvg-name="ESPN" tvg-logo="https://i.imgur.com/7f5T2eO.png" group-title="Sports" tvg-language="English",ESPN HD
+https://liveproduseast.akamaized.net/espne/ESPN/variant.m3u8
+#EXTINF:-1 tvg-id="7" tvg-name="ESPN 2" tvg-logo="https://i.imgur.com/XbY5xXg.png" group-title="Sports" tvg-language="English",ESPN 2
+https://liveproduseast.akamaized.net/espne2/ESPN2/variant.m3u8
+#EXTINF:-1 tvg-id="8" tvg-name="Fox Sports" tvg-logo="https://i.imgur.com/k6kYrX3.png" group-title="Sports" tvg-language="English",Fox Sports
+https://foxsports-lh.akamaized.net/i/fs1_1@83546/master.m3u8
+#EXTINF:-1 tvg-id="9" tvg-name="NBA TV" tvg-logo="https://i.imgur.com/N8rT8pW.png" group-title="Sports" tvg-language="English",NBA TV
+https://nbastreams-a.akamaized.net/hls/live/2029841/nbatv/1/master.m3u8
+#EXTINF:-1 tvg-id="10" tvg-name="Red Bull TV" tvg-logo="https://i.imgur.com/L0HqgWQ.png" group-title="Sports" tvg-language="English",Red Bull TV
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8
+#EXTINF:-1 tvg-id="11" tvg-name="MTV" tvg-logo="https://i.imgur.com/2k6fV5h.png" group-title="Music" tvg-language="English",MTV
+https://mtveu-lh.akamaized.net/i/mtveu_1@304436/master.m3u8
+#EXTINF:-1 tvg-id="12" tvg-name="VH1" tvg-logo="https://i.imgur.com/q0jJ4eX.png" group-title="Music" tvg-language="English",VH1
+https://vh1-live.akamaized.net/hls/live/2024214/vh1/variant.m3u8
+#EXTINF:-1 tvg-id="13" tvg-name="Music Choice" tvg-logo="https://i.imgur.com/Ng4V6i8.png" group-title="Music" tvg-language="English",Music Choice
+https://musicchoice-a.akamaized.net/hls/live/2065341/mc90s/master.m3u8
+#EXTINF:-1 tvg-id="14" tvg-name="Cartoon Network" tvg-logo="https://i.imgur.com/3n5tW1K.png" group-title="Kids" tvg-language="English",Cartoon Network
+https://cartoonnetwork-lh.akamaized.net/i/cn_main_1@175452/master.m3u8
+#EXTINF:-1 tvg-id="15" tvg-name="Nickelodeon" tvg-logo="https://i.imgur.com/Ng6B6yG.png" group-title="Kids" tvg-language="English",Nickelodeon
+https://nicklive-lh.akamaized.net/i/nicklive_1@96346/master.m3u8
+#EXTINF:-1 tvg-id="16" tvg-name="Disney Channel" tvg-logo="https://i.imgur.com/5zJ7GzQ.png" group-title="Kids" tvg-language="English",Disney Channel
+https://disney-lh.akamaized.net/i/disney_channel_1@272019/master.m3u8
+#EXTINF:-1 tvg-id="17" tvg-name="Discovery Channel" tvg-logo="https://i.imgur.com/6d5hLzY.png" group-title="Documentary" tvg-language="English",Discovery Channel
+https://disco-hl.akamaized.net/i/discovery_1@303233/master.m3u8
+#EXTINF:-1 tvg-id="18" tvg-name="National Geographic" tvg-logo="https://i.imgur.com/H3j7j3U.png" group-title="Documentary" tvg-language="English",National Geographic
+https://natgeo-lh.akamaized.net/i/natgeo_1@174584/master.m3u8
+#EXTINF:-1 tvg-id="19" tvg-name="History Channel" tvg-logo="https://i.imgur.com/5y7k2mK.png" group-title="Documentary" tvg-language="English",History Channel
+https://history-lh.akamaized.net/i/history_1@97366/master.m3u8
+#EXTINF:-1 tvg-id="20" tvg-name="TLC" tvg-logo="https://i.imgur.com/k8q2mV7.png" group-title="Lifestyle" tvg-language="English",TLC
+https://tlc-lh.akamaized.net/i/tlc_1@97308/master.m3u8
+#EXTINF:-1 tvg-id="21" tvg-name="Comedy Central" tvg-logo="https://i.imgur.com/3v0n6bU.png" group-title="Comedy" tvg-language="English",Comedy Central
+https://comedycentral-lh.akamaized.net/i/comedycentral_1@97367/master.m3u8
+#EXTINF:-1 tvg-id="22" tvg-name="HBO" tvg-logo="https://i.imgur.com/H5n3fW8.png" group-title="Movies" tvg-language="English" tvg-chno="300 HD",HBO
+https://hbo-lh.akamaized.net/i/hboeast_1@125708/master.m3u8
+#EXTINF:-1 tvg-id="23" tvg-name="Cinemax" tvg-logo="https://i.imgur.com/L5n5YjL.png" group-title="Movies" tvg-language="English",Cinemax
+https://cinemax-lh.akamaized.net/i/cinemax_1@125716/master.m3u8
+#EXTINF:-1 tvg-id="24" tvg-name="Showtime" tvg-logo="https://i.imgur.com/5y6K8jL.png" group-title="Movies" tvg-language="English",Showtime
+https://showtime-lh.akamaized.net/i/showtime_1@125717/master.m3u8
+#EXTINF:-1 tvg-id="25" tvg-name="Starz" tvg-logo="https://i.imgur.com/7k2j5Lm.png" group-title="Movies" tvg-language="English",Starz
+https://starz-lh.akamaized.net/i/starz_1@125718/master.m3u8
