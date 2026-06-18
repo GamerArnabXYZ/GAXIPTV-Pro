@@ -618,6 +618,39 @@ class GAXIPTV {
      * UI & Events
      */
     setupEventListeners() {
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return; // Don't trigger when typing in search
+
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    this.togglePlayPause();
+                    break;
+                case 'KeyM':
+                    this.toggleMute();
+                    break;
+                case 'KeyF':
+                    this.toggleFullscreen();
+                    break;
+                case 'KeyP':
+                    this.togglePiP();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.video.volume = Math.min(1, this.video.volume + 0.1);
+                    this.volumeSlider.value = this.video.volume;
+                    this.showVolumeIndicator(this.video.volume);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.video.volume = Math.max(0, this.video.volume - 0.1);
+                    this.volumeSlider.value = this.video.volume;
+                    this.showVolumeIndicator(this.video.volume);
+                    break;
+            }
+        });
+
         document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', () => this.switchPage(i.dataset.page)));
         
         const searchInput = document.getElementById('searchInput');
