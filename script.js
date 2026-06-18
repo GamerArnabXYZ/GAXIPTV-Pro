@@ -77,6 +77,49 @@ class GAXIPTV {
         }, 2000);
     }
 
+    showVolumeIndicator(vol) {
+        const indicator = document.getElementById('volumeIndicator');
+        if (!indicator) return;
+        
+        const icon = indicator.querySelector('i');
+        if (vol === 0) icon.className = 'fas fa-volume-mute';
+        else if (vol < 0.5) icon.className = 'fas fa-volume-down';
+        else icon.className = 'fas fa-volume-up';
+
+        indicator.style.opacity = '1';
+        if (this.volTimeout) clearTimeout(this.volTimeout);
+        this.volTimeout = setTimeout(() => indicator.style.opacity = '0', 1000);
+    }
+
+    startStatsUpdate() {
+        if (this.statsInterval) clearInterval(this.statsInterval);
+        this.statsInterval = setInterval(() => {
+            if (!this.video || this.video.paused) return;
+
+            const statsRes = document.getElementById('statRes');
+            const statsBitrate = document.getElementById('statBitrate');
+            const statsBuffer = document.getElementById('statBuffer');
+            const streamStats = document.getElementById('streamStats');
+
+            if (statsRes) statsRes.textContent = `${this.video.videoWidth}x${this.video.videoHeight}`;
+            if (statsBuffer) {
+                const buffered = this.video.buffered;
+                if (buffered.length > 0) {
+                    const duration = buffered.end(buffered.length - 1) - this.video.currentTime;
+                    statsBuffer.textContent = duration.toFixed(1);
+                }
+            }
+            if (statsBitrate && this.hls && this.hls.levels[this.hls.currentLevel]) {
+                const bitrate = this.hls.levels[this.hls.currentLevel].bitrate / 1000000;
+                statsBitrate.textContent = bitrate.toFixed(2);
+            }
+
+            // Show stats on hover or for a few seconds when playing starts
+            if (this.video.matches(':hover')) streamStats.style.opacity = '1';
+            else streamStats.style.opacity = '0';
+        }, 1000);
+    }
+
     updateClock() {
         const clockEl = document.getElementById('headerClock');
         if (!clockEl) return;
@@ -190,6 +233,7 @@ class GAXIPTV {
             this.video.volume = this.volumeSlider.value;
             if (this.video.volume > 0) this.video.muted = false;
             this.updateMuteButton();
+            this.showVolumeIndicator(this.video.volume);
         });
 
         this.video.addEventListener("play", () => {
@@ -205,6 +249,7 @@ class GAXIPTV {
         this.video.addEventListener("playing", () => {
             this.loadingOverlay.style.display = "none";
             this.errorMessage.style.display = "none";
+            this.startStatsUpdate();
         });
 
         this.qualityMenu.addEventListener("change", () => {
