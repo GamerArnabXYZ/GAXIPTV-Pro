@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GAXIPTV Pro - Next-Gen Streaming</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js"></script>
@@ -22,12 +22,12 @@
             <span>GAX<span>IPTV</span></span>
         </div>
         <div class="header-right">
-            <div id="headerClock" style="font-family: 'Monaco', monospace; font-weight: 800; color: var(--text-dim); margin-right: 15px; font-size: 0.85rem; background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">00:00:00</div>
+            <div id="headerClock">00:00:00</div>
             <button class="control-btn" id="sleepTimerBtn" title="Sleep Timer">
                 <i class="fas fa-moon"></i>
             </button>
             <div class="search-box">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search premium channels...">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search channels...">
                 <i class="fas fa-search search-icon"></i>
             </div>
         </div>
@@ -36,44 +36,45 @@
     <main class="main-content">
         <section class="page-section active" id="homePage">
             <div class="player-container">
-                <div class="video-container">
+                <div class="video-container" id="videoContainer">
                     <img id="posterImage" src="https://i.postimg.cc/Pr9sC68t/T-Play-Cover.jpg" alt="Poster">
                     <div id="loadingOverlay">
                         <div class="loading-spinner"></div>
-                        <div style="margin-top:10px; font-weight:800; letter-spacing:2px;">ENCRYPTING STREAM...</div>
+                        <div style="margin-top:10px; font-weight:800; letter-spacing:2px;">LOADING STREAM...</div>
                     </div>
                     <video id="liveVideo" playsinline webkit-playsinline muted></video>
                     
-                    <!-- Volume Indicator Overlay -->
-                    <div id="volumeIndicator" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.6); padding:20px; border-radius:50%; color:var(--accent-glow); font-size:2rem; opacity:0; transition:0.3s; pointer-events:none; border:2px solid var(--accent-glow); box-shadow:var(--neon-shadow);">
+                    <!-- Volume Indicator -->
+                    <div id="volumeIndicator">
                         <i class="fas fa-volume-up"></i>
                     </div>
 
                     <!-- Stream Stats Overlay -->
-                    <div id="streamStats" style="position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px; font-size:0.65rem; color:var(--text-main); font-family:monospace; pointer-events:none; border:1px solid rgba(255,255,255,0.1); opacity:0; transition:0.3s;">
+                    <div id="streamStats">
                         <div>CODEC: H.264 / AAC</div>
-                        <div>RESOLUTION: <span id="statRes">--</span></div>
-                        <div>BITRATE: <span id="statBitrate">--</span> Mbps</div>
-                        <div>BUFFER: <span id="statBuffer">--</span>s</div>
+                        <div>RES: <span id="statRes">--</span></div>
+                        <div>BIT: <span id="statBitrate">--</span> Mbps</div>
+                        <div>BUF: <span id="statBuffer">--</span>s</div>
                     </div>
 
-                    <div class="controls">
+                    <div class="controls" id="playerControls">
                         <button class="control-btn" onclick="app.togglePlayPause()" id="playPauseBtn"><i class="fas fa-pause"></i></button>
-                        <button class="control-btn" onclick="app.togglePiP()" title="Picture-in-Picture"><i class="fas fa-tv"></i></button>
+                        <button class="control-btn" onclick="app.togglePiP()" title="PiP"><i class="fas fa-tv"></i></button>
                         <button class="control-btn" onclick="app.cycleZoom()"><i class="fas fa-expand-alt"></i></button>
                         <button class="control-btn" onclick="app.toggleFullscreen()"><i class="fas fa-expand"></i></button>
-                        <div class="volume-container" style="display:flex; align-items:center; gap:10px; margin-left:10px;">
-                            <button class="mute-btn" onclick="app.toggleMute()" id="muteBtn"><i class="fas fa-volume-mute"></i></button>
-                            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="0">
+                        <div class="volume-container">
+                            <button class="mute-btn" id="muteBtn"><i class="fas fa-volume-mute"></i></button>
+                            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="0">
                         </div>
-                        <select class="quality-select" id="qualityMenu" style="margin-left:auto;">
-                            <option value="auto">Auto Quality</option>
+                        <select class="quality-select" id="qualityMenu" style="display:none; margin-left:auto;">
+                            <option value="-1">Auto</option>
                         </select>
                     </div>
                 </div>
-                <div class="error-message" id="errorMessage" style="display:none; padding:20px; text-align:center; color:var(--accent-glow);">
+                <div class="error-message" id="errorMessage" style="display:none;">
                     <i class="fas fa-wifi-slash" style="font-size:2rem; margin-bottom:10px;"></i>
                     <p id="errorText">STREAM OFFLINE</p>
+                    <button class="btn btn-primary" onclick="app.retryStream()" style="margin-top:15px;">RETRY</button>
                 </div>
             </div>
 
@@ -81,20 +82,21 @@
                 <img src="https://picsum.photos/seed/default/60/60.jpg" alt="Logo" class="channel-logo" id="currentChannelLogo">
                 <div class="channel-details">
                     <div class="channel-name" id="currentChannelName">Select a Stream</div>
-                    <div class="channel-meta" style="display:flex; gap:15px; font-size:0.8rem; opacity:0.7;">
-                        <span id="currentChannelQuality"><i class="fas fa-signal"></i> 1080p</span>
-                        <span id="currentChannelLanguage"><i class="fas fa-globe"></i> International</span>
+                    <div class="channel-meta">
+                        <span id="currentChannelQuality"><i class="fas fa-signal"></i> Auto</span>
+                        <span id="currentChannelLanguage" style="display:none;"><i class="fas fa-globe"></i> </span>
+                        <span id="currentChannelGroup" style="display:none;"><i class="fas fa-tag"></i> </span>
                     </div>
                 </div>
-                <div class="live-badge" style="background:var(--accent-glow); color:black; padding:5px 15px; border-radius:20px; font-weight:900; font-size:0.7rem;">LIVE</div>
+                <div class="live-badge">LIVE</div>
             </div>
 
             <div class="category-tabs" id="categoryTabs"></div>
 
             <div id="recentlyPlayedSection" style="display:none; margin-bottom:30px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="font-size:0.9rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Recently Viewed</h3>
-                    <button class="btn" onclick="app.clearRecentlyPlayed()" style="padding:4px 10px; font-size:0.7rem; background:rgba(255,255,255,0.05);">CLEAR</button>
+                <div class="section-header">
+                    <h3 class="section-title">Recently Viewed</h3>
+                    <button class="btn" onclick="app.clearRecentlyPlayed()">CLEAR</button>
                 </div>
                 <div class="channels-grid" id="recentlyPlayedGrid"></div>
             </div>
@@ -103,66 +105,76 @@
         </section>
 
         <section class="page-section" id="playlistsPage">
-            <div class="playlist-section" style="background:var(--bg-glass); backdrop-filter:var(--glass-blur); border-radius:var(--radius-premium); padding:25px; border:1px solid rgba(255,255,255,0.1);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2 style="color:var(--accent-glow); font-weight:800; font-size:1.2rem;">COLLECTIONS</h2>
-                    <button class="btn btn-primary" id="addPlaylist" style="padding:8px 15px; font-size:0.75rem;">+ NEW LIST</button>
+            <div class="glass-card">
+                <div class="section-header">
+                    <h2 class="section-title-lg">COLLECTIONS</h2>
+                    <button class="btn btn-primary" id="addPlaylist">+ NEW LIST</button>
                 </div>
-                <div class="playlist-item" style="background:rgba(255,255,255,0.05); border-radius:15px; padding:15px; border:1px solid rgba(255,255,255,0.05);">
+                <div class="playlist-item">
                     <div class="playlist-info">
-                        <div style="font-weight:700;"><i class="fas fa-server" style="color:var(--accent-glow); margin-right:10px;"></i> OFFICIAL SERVER</div>
-                        <div id="builtinCount" style="font-size:0.8rem; color:var(--text-dim);">Connecting...</div>
+                        <div class="playlist-name"><i class="fas fa-server" style="color:var(--accent-glow); margin-right:10px;"></i> OFFICIAL SERVER</div>
+                        <div class="playlist-meta" id="builtinCount">Connecting...</div>
                     </div>
-                    <button class="btn btn-primary" id="loadBuiltinBtn" style="width:100%; margin-top:15px; justify-content:center;">LOAD SERVER</button>
+                    <div class="playlist-actions">
+                        <button class="btn btn-primary" id="loadBuiltinBtn">LOAD</button>
+                    </div>
                 </div>
             </div>
             <div id="playlistsList" style="margin-top:20px;"></div>
         </section>
 
         <section class="page-section" id="createM3UPage">
-            <div class="form-section" style="background:var(--bg-glass); backdrop-filter:var(--glass-blur); border-radius:var(--radius-premium); padding:25px;">
-                <h2 id="createM3UPageTitle" style="color:var(--accent-glow); font-weight:800; margin-bottom:20px;">ARCHITECT</h2>
-                <input type="text" class="search-input" id="newPlaylistName" placeholder="Playlist Title" style="width:100%; margin-bottom:20px; border-radius:10px;">
+            <div class="glass-card">
+                <h2 class="section-title-lg" style="margin-bottom:20px;">M3U ARCHITECT</h2>
+                <input type="text" class="search-input" id="newPlaylistName" placeholder="Playlist Title" style="width:100%; margin-bottom:15px; border-radius:10px;">
                 
-                <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:15px;">
+                <div class="add-channel-form">
                     <input type="text" class="search-input" id="newChannelName" placeholder="Stream Name" style="width:100%; margin-bottom:10px; border-radius:10px;">
-                    <input type="text" class="search-input" id="newChannelUrl" placeholder="Stream URL (.m3u8)" style="width:100%; margin-bottom:15px; border-radius:10px;">
+                    <input type="text" class="search-input" id="newChannelUrl" placeholder="Stream URL (.m3u8 / .mp4)" style="width:100%; margin-bottom:10px; border-radius:10px;">
+                    <input type="text" class="search-input" id="newChannelLogo" placeholder="Logo URL (optional)" style="width:100%; margin-bottom:10px; border-radius:10px;">
+                    <input type="text" class="search-input" id="newChannelGroupInput" placeholder="Group/Category (optional)" style="width:100%; margin-bottom:15px; border-radius:10px;">
                     <button class="btn btn-primary" id="addChannelToListBtn" style="width:100%; justify-content:center;">ADD TO DRAFT</button>
                 </div>
 
                 <div style="margin-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-size:0.85rem; color:var(--text-dim);">DRAFT (<span id="channelCount">0</span> channels)</span>
+                    </div>
                     <div id="newPlaylistChannelsList"></div>
-                    <div id="emptyChannelList" style="text-align:center; opacity:0.3; padding:20px;">No drafts</div>
+                    <div id="emptyChannelList" style="text-align:center; opacity:0.3; padding:20px;">No drafts yet</div>
                 </div>
 
-                <button class="btn btn-primary" id="saveNewPlaylistBtn" disabled style="width:100%; margin-top:20px; justify-content:center; background:linear-gradient(to right, var(--accent-glow), var(--accent-purple)); color:white;">FINALIZE LIST</button>
+                <button class="btn btn-primary" id="saveNewPlaylistBtn" disabled style="width:100%; margin-top:20px; justify-content:center;">FINALIZE LIST</button>
             </div>
         </section>
 
         <section class="page-section" id="morePage">
-            <div style="background:var(--bg-glass); border-radius:var(--radius-premium); padding:25px;">
-                <h2 style="color:var(--accent-glow); margin-bottom:20px; font-weight:800;">HUB</h2>
+            <div class="glass-card">
+                <h2 class="section-title-lg" style="margin-bottom:20px;">HUB</h2>
                 <div style="display:grid; gap:15px;">
-                    <div class="channel-card" id="favoritesItem" style="flex-direction:row; padding:15px; width:100%; justify-content:flex-start; gap:15px;">
+                    <div class="hub-item" id="favoritesItem">
                         <i class="fas fa-heart" style="color:var(--accent-purple); font-size:1.2rem;"></i>
-                        <div style="text-align:left;">
-                            <div style="font-weight:700;">FAVORITES</div>
-                            <div style="font-size:0.75rem; color:var(--text-dim);">Your saved streams</div>
+                        <div>
+                            <div class="hub-item-title">FAVORITES</div>
+                            <div class="hub-item-sub">Your saved streams</div>
                         </div>
+                        <i class="fas fa-chevron-right" style="margin-left:auto; opacity:0.4;"></i>
                     </div>
-                    <div class="channel-card" id="updateItem" onclick="window.open('https://github.com/GamerArnabXYZ/GAXIPTV-Pro', '_blank')" style="flex-direction:row; padding:15px; width:100%; justify-content:flex-start; gap:15px;">
+                    <div class="hub-item" onclick="window.open('https://github.com/GamerArnabXYZ/GAXIPTV-Pro', '_blank')">
                         <i class="fas fa-sync-alt" style="color:var(--accent-neon); font-size:1.2rem;"></i>
-                        <div style="text-align:left;">
-                            <div style="font-weight:700;">CHECK FOR UPDATES</div>
-                            <div style="font-size:0.75rem; color:var(--text-dim);">Get latest Neon Edition v3.1</div>
+                        <div>
+                            <div class="hub-item-title">CHECK FOR UPDATES</div>
+                            <div class="hub-item-sub">Get latest Neon Edition v3.1</div>
                         </div>
+                        <i class="fas fa-chevron-right" style="margin-left:auto; opacity:0.4;"></i>
                     </div>
-                    <div class="channel-card" id="aboutItem" style="flex-direction:row; padding:15px; width:100%; justify-content:flex-start; gap:15px;">
+                    <div class="hub-item" id="aboutItem">
                         <i class="fas fa-info-circle" style="color:var(--accent-glow); font-size:1.2rem;"></i>
-                        <div style="text-align:left;">
-                            <div style="font-weight:700;">ABOUT</div>
-                            <div style="font-size:0.75rem; color:var(--text-dim);">App Version & Dev info</div>
+                        <div>
+                            <div class="hub-item-title">ABOUT</div>
+                            <div class="hub-item-sub">App Version & Dev info</div>
                         </div>
+                        <i class="fas fa-chevron-right" style="margin-left:auto; opacity:0.4;"></i>
                     </div>
                 </div>
             </div>
@@ -176,54 +188,54 @@
         <div class="nav-item" data-page="morePage"><i class="fas fa-bars"></i><span class="nav-label">Hub</span></div>
     </nav>
 
+    <!-- Sleep Timer Modal -->
     <div class="modal" id="sleepTimerModal">
         <div class="modal-content" style="text-align:center;">
             <h3 style="color:var(--accent-glow); margin-bottom:15px;">SLEEP TIMER</h3>
             <p id="timerStatus" style="font-size:0.8rem; margin-bottom:20px; color:var(--text-dim);">Set auto-pause timer</p>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <button class="btn" onclick="app.setSleepTimer(15)" style="background:rgba(255,255,255,0.05); color:white;">15M</button>
-                <button class="btn" onclick="app.setSleepTimer(30)" style="background:rgba(255,255,255,0.05); color:white;">30M</button>
-                <button class="btn" onclick="app.setSleepTimer(60)" style="background:rgba(255,255,255,0.05); color:white;">60M</button>
-                <button class="btn" onclick="app.clearSleepTimer()" id="cancelTimerBtn" style="display:none; background:var(--accent-purple); color:white; grid-column:span 2;">CANCEL</button>
+                <button class="btn" onclick="app.setSleepTimer(15)">15 MIN</button>
+                <button class="btn" onclick="app.setSleepTimer(30)">30 MIN</button>
+                <button class="btn" onclick="app.setSleepTimer(60)">60 MIN</button>
+                <button class="btn" onclick="app.setSleepTimer(90)">90 MIN</button>
+                <button class="btn btn-danger" onclick="app.clearSleepTimer()" id="cancelTimerBtn" style="display:none; grid-column:span 2;">CANCEL TIMER</button>
             </div>
             <button class="btn" onclick="app.hideDialog('sleepTimerModal')" style="margin-top:20px; width:100%; justify-content:center;">CLOSE</button>
         </div>
     </div>
 
+    <!-- Scanner Modal -->
     <div class="modal" id="scannerModal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width:600px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-                <h3 style="color:var(--accent-glow); font-weight:800; letter-spacing:1px;">STREAM VALIDATOR</h3>
-                <button class="btn" onclick="app.hideDialog('scannerModal')" style="padding:5px 10px; background:rgba(255,255,255,0.05);"><i class="fas fa-times"></i></button>
+                <h3 style="color:var(--accent-glow); font-weight:800;">STREAM VALIDATOR</h3>
+                <button class="control-btn" onclick="app.hideDialog('scannerModal')"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div id="scanStatusContainer" style="background:rgba(255,255,255,0.03); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); margin-bottom:20px; text-align:center;">
-                <div id="scanProgress" style="width:0%; height:4px; background:linear-gradient(to right, var(--accent-glow), var(--accent-purple)); border-radius:2px; transition:0.3s; margin-bottom:15px; box-shadow:0 0 10px var(--accent-glow);"></div>
-                <div id="scanCount" style="font-size:1.2rem; font-weight:900; color:var(--text-main);">READY TO SCAN</div>
-                <div id="scanSubStatus" style="font-size:0.7rem; color:var(--text-dim); margin-top:5px; text-transform:uppercase; letter-spacing:2px;">Select playlist to start</div>
+            <div id="scanStatusContainer">
+                <div id="scanProgress"></div>
+                <div id="scanCount">READY TO SCAN</div>
+                <div id="scanSubStatus">Select playlist to start</div>
             </div>
-
-            <div id="scanResults" style="max-height:250px; overflow-y:auto; margin-bottom:20px; border-radius:10px; background:rgba(0,0,0,0.2);"></div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div id="scanResults"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:15px;">
                 <button class="btn btn-primary" id="startScanBtn" style="justify-content:center;">START SCAN</button>
-                <button class="btn" id="stopScanBtn" style="display:none; justify-content:center; background:var(--accent-secondary); color:white;">STOP</button>
-                <button class="btn btn-primary" id="loadWorkingBtn" style="display:none; justify-content:center; background:var(--accent-neon); color:black; grid-column:span 2;">LOAD WORKING CHANNELS</button>
+                <button class="btn btn-danger" id="stopScanBtn" style="display:none; justify-content:center;">STOP</button>
+                <button class="btn" id="loadWorkingBtn" style="display:none; justify-content:center; background:var(--accent-neon); color:black; grid-column:span 2;">LOAD WORKING CHANNELS</button>
             </div>
         </div>
     </div>
 
+    <!-- About Modal -->
     <div class="modal" id="aboutDialog">
         <div class="modal-content" style="text-align:center;">
             <i class="fas fa-satellite-dish" style="font-size:3rem; color:var(--accent-glow); margin-bottom:20px;"></i>
             <h2 style="color:var(--accent-glow); font-weight:900;">GAXIPTV PRO</h2>
-            <p style="font-size:0.85rem; margin:15px 0; color:var(--text-dim);">Developed by GamerArnabXYZ<br>V 3.0.0 (Neon Edition)</p>
+            <p style="font-size:0.85rem; margin:15px 0; color:var(--text-dim);">Developed by GamerArnabXYZ<br>V 3.1.0 (Neon Edition)</p>
             <button class="btn btn-primary" id="subscribeBtn" style="width:100%; justify-content:center; background:#ff0000; color:white;"><i class="fab fa-youtube"></i> SUBSCRIBE</button>
             <button class="btn" onclick="app.hideDialog('aboutDialog')" style="margin-top:15px; width:100%; justify-content:center;">BACK</button>
         </div>
     </div>
 
-    <input type="hidden" id="newChannelGroupInput">
     <script src="script.js"></script>
 </body>
 </html>

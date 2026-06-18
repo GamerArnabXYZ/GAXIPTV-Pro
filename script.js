@@ -1,53 +1,54 @@
 'use strict';
 
-/**
- * GAXIPTV Professional IPTV Application
- * @class GAXIPTV
- */
 class GAXIPTV {
     constructor() {
         // DOM Elements
-        this.video = document.getElementById("liveVideo");
-        this.posterImage = document.getElementById("posterImage");
-        this.loadingOverlay = document.getElementById("loadingOverlay");
-        this.errorMessage = document.getElementById("errorMessage");
-        this.errorText = document.getElementById("errorText");
+        this.video          = document.getElementById('liveVideo');
+        this.posterImage    = document.getElementById('posterImage');
+        this.loadingOverlay = document.getElementById('loadingOverlay');
+        this.errorMessage   = document.getElementById('errorMessage');
+        this.errorText      = document.getElementById('errorText');
+        this.muteBtn        = document.getElementById('muteBtn');
+        this.playPauseBtn   = document.getElementById('playPauseBtn');
+        this.volumeSlider   = document.getElementById('volumeSlider');
+        this.qualityMenu    = document.getElementById('qualityMenu');
 
-        // Player Controls
-        this.muteBtn = document.getElementById("muteBtn");
-        this.playPauseBtn = document.getElementById("playPauseBtn");
-        this.volumeSlider = document.getElementById("volumeSlider");
-        this.qualityMenu = document.getElementById("qualityMenu");
+        // State
+        this.hls                  = null;
+        this.zoomIndex            = 0;
+        this.zoomModes            = ['fill', 'cover', 'contain'];
+        this.currentChannel       = null;
+        this.currentChannelUrl    = null;
+        this.channels             = [];
+        this.favorites            = this._load('favorites', []);
+        this.playlists            = this._load('playlists', []);
+        this.recentlyPlayed       = this._load('recentlyPlayed', []);
+        this.sleepTimer           = null;
+        this.sleepTimerEnd        = null;
+        this.categories           = new Set();
+        this.currentCategory      = 'all';
+        this.searchQuery          = '';
+        this.isScanning           = false;
+        this.workingChannels      = [];
+        this.newPlaylistChannels  = [];
+        this.volTimeout           = null;
+        this.statsInterval        = null;
+        this.controlsTimeout      = null;
 
-        // App State
-        this.hls = null;
-        this.zoomIndex = 0;
-        this.zoomModes = ["fill", "cover", "contain"];
-        this.currentChannel = null;
-        this.channels = [];
-        this.favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-        this.playlists = JSON.parse(localStorage.getItem('playlists')) || [];
-        this.recentlyPlayed = JSON.parse(localStorage.getItem('recentlyPlayed')) || [];
-        this.sleepTimer = null;
-        this.sleepTimerEnd = null;
-        this.categories = new Set();
-        this.currentCategory = 'all';
-        this.searchQuery = '';
-        this.isScanning = false;
-        this.workingChannels = [];
-        this.newPlaylistChannels = []; 
-        this.editingPlaylistIndex = -1; 
-        this.scanningPlaylistIndex = -1; 
-
-        // External playlist file
         this.builtinPlaylistUrl = 'playlist.m3u';
-
         this.init();
     }
 
-    /**
-     * Initialize the application
-     */
+    _load(key, fallback) {
+        try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+        catch (e) { return fallback; }
+    }
+
+    _save(key, val) {
+        try { localStorage.setItem(key, JSON.stringify(val)); }
+        catch (e) { console.warn('Storage error:', e); }
+    }
+
     async init() {
         await this.loadM3UPlaylist();
         this.initPlayer();
@@ -58,96 +59,37 @@ class GAXIPTV {
         this.updateCounts();
         this.loadPlaylists();
 
-        // Auto-play first channel if available
-        if (this.channels.length > 0) {
-            this.loadChannel(this.channels[0]);
-        }
-        
-        // Timer update interval
+        if (this.channels.length > 0) this.loadChannel(this.channels[0]);
+
         setInterval(() => this.updateTimerStatus(), 1000);
         setInterval(() => this.updateClock(), 1000);
 
-        // Hide splash screen
         setTimeout(() => {
             const splash = document.getElementById('splashScreen');
             if (splash) {
                 splash.style.opacity = '0';
-                setTimeout(() => splash.style.visibility = 'hidden', 800);
+                setTimeout(() => { splash.style.display = 'none'; }, 800);
             }
         }, 2000);
     }
 
-    showVolumeIndicator(vol) {
-        const indicator = document.getElementById('volumeIndicator');
-        if (!indicator) return;
-        
-        const icon = indicator.querySelector('i');
-        if (vol === 0) icon.className = 'fas fa-volume-mute';
-        else if (vol < 0.5) icon.className = 'fas fa-volume-down';
-        else icon.className = 'fas fa-volume-up';
+    /* ============ M3U LOADING ============ */
 
-        indicator.style.opacity = '1';
-        if (this.volTimeout) clearTimeout(this.volTimeout);
-        this.volTimeout = setTimeout(() => indicator.style.opacity = '0', 1000);
-    }
-
-    startStatsUpdate() {
-        if (this.statsInterval) clearInterval(this.statsInterval);
-        this.statsInterval = setInterval(() => {
-            if (!this.video || this.video.paused) return;
-
-            const statsRes = document.getElementById('statRes');
-            const statsBitrate = document.getElementById('statBitrate');
-            const statsBuffer = document.getElementById('statBuffer');
-            const streamStats = document.getElementById('streamStats');
-
-            if (statsRes) statsRes.textContent = `${this.video.videoWidth}x${this.video.videoHeight}`;
-            if (statsBuffer) {
-                const buffered = this.video.buffered;
-                if (buffered.length > 0) {
-                    const duration = buffered.end(buffered.length - 1) - this.video.currentTime;
-                    statsBuffer.textContent = duration.toFixed(1);
-                }
-            }
-            if (statsBitrate && this.hls && this.hls.levels[this.hls.currentLevel]) {
-                const bitrate = this.hls.levels[this.hls.currentLevel].bitrate / 1000000;
-                statsBitrate.textContent = bitrate.toFixed(2);
-            }
-
-            // Show stats on hover or for a few seconds when playing starts
-            if (this.video.matches(':hover')) streamStats.style.opacity = '1';
-            else streamStats.style.opacity = '0';
-        }, 1000);
-    }
-
-    updateClock() {
-        const clockEl = document.getElementById('headerClock');
-        if (!clockEl) return;
-        const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    }
-
-    /**
-     * M3U Playlist Handling
-     */
     async loadM3UPlaylist() {
         try {
-            const response = await fetch(this.builtinPlaylistUrl);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const m3uContent = await response.text();
-            this.channels = this.parseM3U(m3uContent);
+            const res = await fetch(this.builtinPlaylistUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const text = await res.text();
+            this.channels = this.parseM3U(text);
             this.extractCategories();
             document.getElementById('builtinCount').textContent = `${this.channels.length} channels`;
-        } catch (error) {
-            console.error('Failed to load built-in playlist:', error);
+        } catch (err) {
+            console.error('Playlist load failed:', err);
             this.channels = [];
             this.categories = new Set();
             document.getElementById('builtinCount').textContent = '0 channels';
-
             if (!localStorage.getItem('playlistLoadAttempted')) {
-                this.showNotification('No playlist found. Add channels using Create M3U tab.', 'info');
+                this.showNotification('No playlist found. Use "New" tab to add channels.', 'info');
                 localStorage.setItem('playlistLoadAttempted', 'true');
             }
         }
@@ -156,31 +98,31 @@ class GAXIPTV {
     parseM3U(content) {
         const lines = content.split('\n');
         const channels = [];
-        let currentChannel = null;
+        let cur = null;
 
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine.startsWith('#EXTINF:')) {
-                const nameMatch = trimmedLine.match(/,(.+)$/);
-                const logoMatch = trimmedLine.match(/tvg-logo="([^"]+)"/);
-                const groupMatch = trimmedLine.match(/group-title="([^"]+)"/);
-                const idMatch = trimmedLine.match(/tvg-id="([^"]+)"/);
-                const langMatch = trimmedLine.match(/tvg-language="([^"]+)"/);
-                const qualMatch = trimmedLine.match(/tvg-resolution="([^"]+)"/);
-
-                currentChannel = {
-                    name: nameMatch ? nameMatch[1] : 'Unknown',
-                    logo: logoMatch ? logoMatch[1] : `https://picsum.photos/seed/${Math.random().toString(36).substring(7)}/200/200.jpg`,
-                    group: groupMatch ? groupMatch[1] : 'General',
-                    id: idMatch ? idMatch[1] : Math.random().toString(36).substring(7),
-                    language: langMatch ? langMatch[1] : null,
-                    quality: qualMatch ? qualMatch[1] : null,
-                    url: ''
+        for (const raw of lines) {
+            const line = raw.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const nameM = line.match(/,(.+)$/);
+                const logoM = line.match(/tvg-logo="([^"]+)"/);
+                const groupM = line.match(/group-title="([^"]+)"/);
+                const idM = line.match(/tvg-id="([^"]+)"/);
+                const langM = line.match(/tvg-language="([^"]+)"/);
+                const qualM = line.match(/tvg-resolution="([^"]+)"/);
+                cur = {
+                    name:     nameM ? nameM[1].trim() : 'Unknown',
+                    logo:     logoM ? logoM[1] : null,
+                    group:    groupM ? groupM[1] : 'General',
+                    id:       idM ? idM[1] : Math.random().toString(36).substring(2, 10),
+                    language: langM ? langM[1] : null,
+                    quality:  qualM ? qualM[1] : null,
+                    url:      ''
                 };
-            } else if (trimmedLine && !trimmedLine.startsWith('#') && currentChannel) {
-                currentChannel.url = trimmedLine;
-                channels.push(currentChannel);
-                currentChannel = null;
+            } else if (line && !line.startsWith('#') && cur) {
+                cur.url = line;
+                if (!cur.logo) cur.logo = `https://picsum.photos/seed/${cur.id}/200/200.jpg`;
+                channels.push(cur);
+                cur = null;
             }
         }
         return channels;
@@ -188,122 +130,155 @@ class GAXIPTV {
 
     extractCategories() {
         this.categories.clear();
-        for (const channel of this.channels) {
-            if (channel.group) {
-                this.categories.add(channel.group);
-            }
+        for (const ch of this.channels) {
+            if (ch.group) this.categories.add(ch.group);
         }
     }
 
-    getCategoryIcon(categoryName) {
-        const categoryLower = categoryName.toLowerCase();
-        if (categoryLower.includes('movie') || categoryLower.includes('film')) return 'fa-film';
-        if (categoryLower.includes('sport')) return 'fa-football-ball';
-        if (categoryLower.includes('news')) return 'fa-newspaper';
-        if (categoryLower.includes('music')) return 'fa-music';
-        if (categoryLower.includes('kids') || categoryLower.includes('children')) return 'fa-child';
-        if (categoryLower.includes('documentary')) return 'fa-globe';
-        if (categoryLower.includes('entertainment')) return 'fa-theater-masks';
-        if (categoryLower.includes('relious') || categoryLower.includes('religious')) return 'fa-mosque';
-        if (categoryLower.includes('adult')) return 'fa-user-secret';
+    getCategoryIcon(name) {
+        const n = name.toLowerCase();
+        if (n.includes('movie') || n.includes('film')) return 'fa-film';
+        if (n.includes('sport'))   return 'fa-football-ball';
+        if (n.includes('news'))    return 'fa-newspaper';
+        if (n.includes('music'))   return 'fa-music';
+        if (n.includes('kids') || n.includes('children')) return 'fa-child';
+        if (n.includes('documentary')) return 'fa-globe';
+        if (n.includes('entertainment')) return 'fa-theater-masks';
+        if (n.includes('religi'))  return 'fa-mosque';
+        if (n.includes('adult'))   return 'fa-user-secret';
+        if (n.includes('nature'))  return 'fa-leaf';
         return 'fa-tv';
     }
 
+    /* ============ PLAYER ============ */
+
     initPlayer() {
+        // Start muted for autoplay policy
         this.video.volume = 0;
-        this.video.muted = true;
+        this.video.muted  = true;
         this.volumeSlider.value = 0;
-        this.muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
 
-        if (!localStorage.getItem('userHasUnmuted')) {
-            this.muteBtn.addEventListener('click', () => {
-                if (this.video.volume === 0 && this.video.muted) {
-                    this.video.volume = 1.0;
-                    this.video.muted = false;
-                    this.volumeSlider.value = 1.0;
-                    localStorage.setItem('userHasUnmuted', 'true');
-                    this.updateMuteButton();
-                } else {
-                    this.toggleMute();
-                }
-            }, { once: true });
-        }
+        this.video.addEventListener('play', () => {
+            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            if (this.posterImage) this.posterImage.style.display = 'none';
+        });
 
-        this.volumeSlider.addEventListener("input", () => {
-            this.video.volume = this.volumeSlider.value;
-            if (this.video.volume > 0) this.video.muted = false;
+        this.video.addEventListener('pause', () => {
+            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        });
+
+        this.video.addEventListener('waiting', () => {
+            this.loadingOverlay.style.display = 'flex';
+        });
+
+        this.video.addEventListener('playing', () => {
+            this.loadingOverlay.style.display = 'none';
+            this.errorMessage.style.display = 'none';
+            this.startStatsUpdate();
+        });
+
+        this.video.addEventListener('error', () => {
+            this.loadingOverlay.style.display = 'none';
+        });
+
+        this.muteBtn.addEventListener('click', () => {
+            if (this.video.muted || this.video.volume === 0) {
+                this.video.volume = 1.0;
+                this.video.muted  = false;
+                this.volumeSlider.value = 1.0;
+                this._save('userUnmuted', true);
+            } else {
+                this.toggleMute();
+            }
             this.updateMuteButton();
             this.showVolumeIndicator(this.video.volume);
         });
 
-        this.video.addEventListener("play", () => {
-            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            this.posterImage.style.display = "none";
+        this.volumeSlider.addEventListener('input', () => {
+            const v = parseFloat(this.volumeSlider.value);
+            this.video.volume = v;
+            this.video.muted  = (v === 0);
+            this.updateMuteButton();
+            this.showVolumeIndicator(v);
         });
 
-        this.video.addEventListener("pause", () => {
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        this.qualityMenu.addEventListener('change', () => {
+            if (!this.hls) return;
+            const v = this.qualityMenu.value;
+            this.hls.currentLevel = (v === '-1' || v === 'auto') ? -1 : parseInt(v);
         });
 
-        this.video.addEventListener("waiting", () => this.loadingOverlay.style.display = "flex");
-        this.video.addEventListener("playing", () => {
-            this.loadingOverlay.style.display = "none";
-            this.errorMessage.style.display = "none";
-            this.startStatsUpdate();
-        });
-
-        this.qualityMenu.addEventListener("change", () => {
-            if (this.hls) {
-                const level = parseInt(this.qualityMenu.value);
-                this.hls.currentLevel = level >= 0 ? level : Hls.level.AUTO;
-            }
-        });
+        // Touch controls: tap to show/hide on mobile
+        const vc = document.getElementById('videoContainer');
+        if (vc) {
+            vc.addEventListener('touchstart', () => {
+                vc.classList.add('touch-active');
+                clearTimeout(this.controlsTimeout);
+                this.controlsTimeout = setTimeout(() => vc.classList.remove('touch-active'), 3000);
+            }, { passive: true });
+        }
     }
 
     loadSource(url) {
+        if (!url) return;
         this.cleanupPlayer();
-        this.loadingOverlay.style.display = "flex";
-        this.errorMessage.style.display = "none";
+        this.loadingOverlay.style.display = 'flex';
+        this.errorMessage.style.display   = 'none';
+        this.currentChannelUrl = url;
 
         if (Hls.isSupported()) {
             this.hls = new Hls({
                 debug: false,
                 enableWorker: true,
                 lowLatencyMode: true,
-                backBufferLength: 90
+                backBufferLength: 90,
+                maxBufferLength: 30,
             });
-
             this.hls.loadSource(url);
             this.hls.attachMedia(this.video);
 
             this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
                 this.populateQualityMenu();
                 this.video.play().catch(e => {
-                    console.error("Autoplay failed:", e);
-                    this.loadingOverlay.style.display = "none";
+                    console.warn('Autoplay blocked:', e);
+                    this.loadingOverlay.style.display = 'none';
                 });
             });
 
             this.hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
-                    this.showError(`Stream error: ${data.details}`);
-                    this.cleanupPlayer();
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            this.hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            this.hls.recoverMediaError();
+                            break;
+                        default:
+                            this.showError('Stream error: ' + data.details);
+                            this.cleanupPlayer();
+                    }
                 }
             });
         } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS (Safari/iOS)
             this.video.src = url;
-            this.video.addEventListener('loadedmetadata', () => this.video.play());
+            this.video.addEventListener('loadedmetadata', () => {
+                this.video.play().catch(e => console.warn(e));
+            });
         } else {
-            this.showError("HLS not supported");
+            this.showError('HLS not supported on this browser');
         }
     }
 
+    retryStream() {
+        if (this.currentChannelUrl) this.loadSource(this.currentChannelUrl);
+    }
+
     cleanupPlayer() {
-        if (this.hls) {
-            this.hls.destroy();
-            this.hls = null;
-        }
-        this.video.src = "";
+        if (this.statsInterval) { clearInterval(this.statsInterval); this.statsInterval = null; }
+        if (this.hls) { this.hls.destroy(); this.hls = null; }
+        this.video.src = '';
         this.video.load();
     }
 
@@ -312,37 +287,70 @@ class GAXIPTV {
             this.qualityMenu.style.display = 'none';
             return;
         }
-
-        this.qualityMenu.innerHTML = '<option value="auto">Auto Quality</option>';
-        this.hls.levels.forEach((level, index) => {
-            const option = document.createElement("option");
-            option.value = index;
-            option.textContent = `${level.height}p`;
-            this.qualityMenu.appendChild(option);
+        this.qualityMenu.innerHTML = '<option value="-1">Auto</option>';
+        this.hls.levels.forEach((lvl, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = lvl.height ? `${lvl.height}p` : `Level ${i}`;
+            this.qualityMenu.appendChild(opt);
         });
         this.qualityMenu.style.display = 'block';
     }
 
+    startStatsUpdate() {
+        if (this.statsInterval) clearInterval(this.statsInterval);
+        this.statsInterval = setInterval(() => {
+            if (!this.video || this.video.paused) return;
+            const rEl = document.getElementById('statRes');
+            const bEl = document.getElementById('statBitrate');
+            const buEl = document.getElementById('statBuffer');
+            if (rEl) rEl.textContent = `${this.video.videoWidth}x${this.video.videoHeight}`;
+            if (buEl && this.video.buffered.length > 0) {
+                const dur = this.video.buffered.end(this.video.buffered.length - 1) - this.video.currentTime;
+                buEl.textContent = dur.toFixed(1);
+            }
+            if (bEl && this.hls && this.hls.levels[this.hls.currentLevel]) {
+                bEl.textContent = (this.hls.levels[this.hls.currentLevel].bitrate / 1e6).toFixed(2);
+            }
+        }, 2000);
+    }
+
+    showVolumeIndicator(vol) {
+        const el = document.getElementById('volumeIndicator');
+        if (!el) return;
+        const icon = el.querySelector('i');
+        if (vol === 0) icon.className = 'fas fa-volume-mute';
+        else if (vol < 0.5) icon.className = 'fas fa-volume-down';
+        else icon.className = 'fas fa-volume-up';
+        el.style.opacity = '1';
+        if (this.volTimeout) clearTimeout(this.volTimeout);
+        this.volTimeout = setTimeout(() => { el.style.opacity = '0'; }, 1200);
+    }
+
     togglePlayPause() {
-        if (this.video.paused) this.video.play().catch(e => console.error(e));
+        if (!this.currentChannelUrl) return;
+        if (this.video.paused) this.video.play().catch(e => console.warn(e));
         else this.video.pause();
     }
 
     toggleMute() {
-        if (this.video.volume > 0) {
+        if (this.video.volume > 0 && !this.video.muted) {
+            this.video.muted  = true;
             this.video.volume = 0;
-            this.video.muted = true;
             this.volumeSlider.value = 0;
         } else {
+            this.video.muted  = false;
             this.video.volume = 1.0;
-            this.video.muted = false;
             this.volumeSlider.value = 1.0;
         }
         this.updateMuteButton();
     }
 
     updateMuteButton() {
-        this.muteBtn.innerHTML = this.video.volume > 0 ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
+        const muted = this.video.muted || this.video.volume === 0;
+        this.muteBtn.innerHTML = muted
+            ? '<i class="fas fa-volume-mute"></i>'
+            : '<i class="fas fa-volume-up"></i>';
     }
 
     cycleZoom() {
@@ -351,19 +359,30 @@ class GAXIPTV {
     }
 
     toggleFullscreen() {
-        if (!document.fullscreenElement) this.video.requestFullscreen().catch(err => console.error(err));
-        else document.exitFullscreen();
+        const el = document.getElementById('videoContainer');
+        if (!document.fullscreenElement) {
+            (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen).call(el)
+                .catch(e => console.warn(e));
+        } else {
+            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        }
     }
 
     togglePiP() {
-        if (document.pictureInPictureElement) document.exitPictureInPicture();
-        else if (document.pictureInPictureEnabled) this.video.requestPictureInPicture();
+        if (document.pictureInPictureElement) {
+            document.exitPictureInPicture();
+        } else if (document.pictureInPictureEnabled && !this.video.disablePictureInPicture) {
+            this.video.requestPictureInPicture().catch(e => console.warn(e));
+        }
     }
 
-    showError(message) {
-        this.errorText.textContent = message;
-        this.errorMessage.style.display = "block";
+    showError(msg) {
+        this.loadingOverlay.style.display = 'none';
+        this.errorText.textContent = msg;
+        this.errorMessage.style.display = 'block';
     }
+
+    /* ============ CHANNELS ============ */
 
     loadChannel(channel) {
         if (!channel || !channel.url) return;
@@ -372,58 +391,60 @@ class GAXIPTV {
         this.loadSource(channel.url);
         this.updateActiveChannelCard(channel.id);
         this.addToRecentlyPlayed(channel);
-        document.querySelector('.player-container').scrollIntoView({ behavior: 'smooth' });
+        const pc = document.querySelector('.player-container');
+        if (pc) pc.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     updateChannelInfo(channel) {
-        document.getElementById('currentChannelName').textContent = channel.name;
-        document.getElementById('currentChannelLogo').src = channel.logo;
-        document.getElementById('currentChannelQuality').innerHTML = `<i class="fas fa-signal"></i> ${channel.quality || 'Auto'}`;
+        const nameEl = document.getElementById('currentChannelName');
+        const logoEl = document.getElementById('currentChannelLogo');
+        const qualEl = document.getElementById('currentChannelQuality');
+        const langEl = document.getElementById('currentChannelLanguage');
+        const grpEl  = document.getElementById('currentChannelGroup');
 
-        const lang = document.getElementById('currentChannelLanguage');
-        if (channel.language) {
-            lang.style.display = 'flex';
-            lang.innerHTML = `<i class="fas fa-globe"></i> ${channel.language}`;
-        } else lang.style.display = 'none';
+        if (nameEl) nameEl.textContent = channel.name;
+        if (logoEl) { logoEl.src = channel.logo || ''; logoEl.onerror = () => { logoEl.src = 'https://picsum.photos/seed/err/60/60.jpg'; }; }
+        if (qualEl) qualEl.innerHTML = `<i class="fas fa-signal"></i> ${channel.quality || 'Auto'}`;
 
-        const group = document.getElementById('currentChannelGroup');
-        if (channel.group) {
-            group.style.display = 'flex';
-            group.innerHTML = `<i class="fas fa-tag"></i> ${channel.group}`;
-        } else group.style.display = 'none';
+        if (langEl) {
+            if (channel.language) { langEl.style.display = ''; langEl.innerHTML = `<i class="fas fa-globe"></i> ${channel.language}`; }
+            else langEl.style.display = 'none';
+        }
+        if (grpEl) {
+            if (channel.group) { grpEl.style.display = ''; grpEl.innerHTML = `<i class="fas fa-tag"></i> ${channel.group}`; }
+            else grpEl.style.display = 'none';
+        }
     }
 
-    updateActiveChannelCard(channelId) {
-        document.querySelectorAll('.channel-card').forEach(card => card.classList.toggle('active', card.dataset.channelId === channelId));
+    updateActiveChannelCard(id) {
+        document.querySelectorAll('.channel-card').forEach(c => {
+            c.classList.toggle('active', c.dataset.channelId === id);
+        });
     }
 
-    toggleFavorite(channelId) {
-        const index = this.favorites.indexOf(channelId);
-        if (index > -1) this.favorites.splice(index, 1);
-        else this.favorites.push(channelId);
-        localStorage.setItem('favorites', JSON.stringify(this.favorites));
+    toggleFavorite(id) {
+        const idx = this.favorites.indexOf(id);
+        if (idx > -1) this.favorites.splice(idx, 1);
+        else this.favorites.push(id);
+        this._save('favorites', this.favorites);
         this.renderChannels();
+        this.renderCategories();
     }
+
+    /* ============ RENDER ============ */
 
     renderCategories() {
         const tabs = document.getElementById('categoryTabs');
         if (!tabs) return;
         tabs.innerHTML = '';
-        
-        // All Channels
         tabs.appendChild(this.createCategoryTab('all', 'All', 'fa-globe', this.channels.length));
 
-        // Favorites Tab (Dynamic)
-        if (this.favorites.length > 0) {
-            const favCount = this.channels.filter(c => this.favorites.includes(c.id)).length;
-            if (favCount > 0) {
-                tabs.appendChild(this.createCategoryTab('favorites', 'Favorites', 'fa-heart', favCount));
-            }
-        }
+        const favCount = this.channels.filter(c => this.favorites.includes(c.id)).length;
+        if (favCount > 0) tabs.appendChild(this.createCategoryTab('favorites', 'Favorites', 'fa-heart', favCount));
 
-        this.categories.forEach(category => {
-            const count = this.channels.filter(c => c.group === category).length;
-            if (count > 0) tabs.appendChild(this.createCategoryTab(category, category, this.getCategoryIcon(category), count));
+        this.categories.forEach(cat => {
+            const cnt = this.channels.filter(c => c.group === cat).length;
+            if (cnt > 0) tabs.appendChild(this.createCategoryTab(cat, cat, this.getCategoryIcon(cat), cnt));
         });
     }
 
@@ -436,23 +457,25 @@ class GAXIPTV {
         return tab;
     }
 
-    setActiveCategory(category) {
-        this.currentCategory = category;
-        document.querySelectorAll('.category-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.category === category));
+    setActiveCategory(cat) {
+        this.currentCategory = cat;
+        document.querySelectorAll('.category-tab').forEach(t => t.classList.toggle('active', t.dataset.category === cat));
         this.renderChannels();
     }
 
     renderChannels() {
         const grid = document.getElementById('channelsGrid');
+        if (!grid) return;
         grid.innerHTML = '';
 
-        let list = this.channels;
-        if (this.currentCategory !== 'all') {
-            if (this.currentCategory === 'favorites') list = list.filter(c => this.favorites.includes(c.id));
-            else list = list.filter(c => c.group === this.currentCategory);
-        }
+        let list = [...this.channels];
+        if (this.currentCategory === 'favorites') list = list.filter(c => this.favorites.includes(c.id));
+        else if (this.currentCategory !== 'all') list = list.filter(c => c.group === this.currentCategory);
 
-        if (this.searchQuery) list = list.filter(c => c.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+        if (this.searchQuery) {
+            const q = this.searchQuery.toLowerCase();
+            list = list.filter(c => c.name.toLowerCase().includes(q));
+        }
 
         list.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -461,7 +484,9 @@ class GAXIPTV {
             return;
         }
 
-        list.forEach(channel => grid.appendChild(this.createChannelCard(channel)));
+        const frag = document.createDocumentFragment();
+        list.forEach(ch => frag.appendChild(this.createChannelCard(ch)));
+        grid.appendChild(frag);
     }
 
     createChannelCard(channel) {
@@ -472,78 +497,84 @@ class GAXIPTV {
 
         card.innerHTML = `
             <div class="channel-card-logo-container">
-                <img data-src="${channel.logo}" alt="${channel.name}" class="channel-card-logo lazy-load" onerror="this.src='https://picsum.photos/seed/error/60/60.jpg'">
+                <img data-src="${channel.logo}" alt="${channel.name}" class="channel-card-logo lazy-load"
+                     onerror="this.src='https://picsum.photos/seed/${channel.id}/60/60.jpg'">
             </div>
             <div class="channel-card-name">${channel.name}</div>
-            <button class="favorite-btn ${isFav ? 'active' : ''}"><i class="fas fa-heart"></i></button>
+            <button class="favorite-btn ${isFav ? 'active' : ''}" aria-label="Favorite">
+                <i class="fas fa-heart"></i>
+            </button>
         `;
 
-        card.addEventListener('click', (e) => {
+        card.addEventListener('click', e => {
             if (!e.target.closest('.favorite-btn')) this.loadChannel(channel);
         });
 
-        card.querySelector('.favorite-btn').addEventListener('click', (e) => {
+        card.querySelector('.favorite-btn').addEventListener('click', e => {
             e.stopPropagation();
             this.toggleFavorite(channel.id);
         });
 
-        this.setupLazyLoading(card.querySelector('.lazy-load'));
+        this.setupLazyLoad(card.querySelector('.lazy-load'));
         return card;
     }
 
-    setupLazyLoading(img) {
-        const obs = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const i = entry.target;
-                    i.src = i.dataset.src;
-                    i.classList.add('loaded');
-                    obs.unobserve(i);
+    setupLazyLoad(img) {
+        if (!img) return;
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.src = e.target.dataset.src;
+                    e.target.classList.add('loaded');
+                    obs.unobserve(e.target);
                 }
             });
-        });
+        }, { rootMargin: '100px' });
         obs.observe(img);
     }
 
-    /**
-     * Playlist Logic
-     */
+    /* ============ PLAYLISTS ============ */
+
     loadPlaylists() {
         const list = document.getElementById('playlistsList');
+        if (!list) return;
         list.innerHTML = '';
 
         if (this.playlists.length === 0) {
-            list.innerHTML = '<div class="empty-state"><h3>No playlists yet</h3></div>';
+            list.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><h3>No playlists yet</h3><p>Create one in the New tab</p></div>';
             return;
         }
 
-        this.playlists.forEach((p, index) => {
+        this.playlists.forEach((p, i) => {
             const item = document.createElement('div');
-            item.className = 'playlist-item';
+            item.className = 'playlist-item glass-card';
+            item.style.margin = '0 0 12px 0';
             item.innerHTML = `
                 <div class="playlist-info">
-                    <div class="playlist-name">${p.name}</div>
-                    <div class="playlist-meta">Custom Playlist</div>
+                    <div class="playlist-name"><i class="fas fa-list" style="color:var(--accent-glow);margin-right:8px;"></i>${p.name}</div>
+                    <div class="playlist-meta">Custom Playlist • ${(p.content.match(/#EXTINF/g) || []).length} channels</div>
                 </div>
                 <div class="playlist-actions">
-                    <button class="btn btn-secondary" onclick="app.deletePlaylist(${index})"><i class="fas fa-trash"></i></button>
-                    <button class="btn" onclick="app.loadPlaylist(${index})"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-secondary" title="Delete"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-primary" title="Load"><i class="fas fa-play"></i></button>
                 </div>
             `;
+            item.querySelectorAll('.btn')[0].addEventListener('click', () => this.deletePlaylist(i));
+            item.querySelectorAll('.btn')[1].addEventListener('click', () => this.loadPlaylist(i));
             list.appendChild(item);
         });
     }
 
-    deletePlaylist(index) {
-        if (confirm('Delete this playlist?')) {
-            this.playlists.splice(index, 1);
-            localStorage.setItem('playlists', JSON.stringify(this.playlists));
-            this.loadPlaylists();
-        }
+    deletePlaylist(i) {
+        if (!confirm('Delete this playlist?')) return;
+        this.playlists.splice(i, 1);
+        this._save('playlists', this.playlists);
+        this.loadPlaylists();
+        this.showNotification('Playlist deleted', 'info');
     }
 
-    async loadPlaylist(index) {
-        const p = this.playlists[index];
+    loadPlaylist(i) {
+        const p = this.playlists[i];
         if (!p) return;
         this.channels = this.parseM3U(p.content);
         this.extractCategories();
@@ -552,54 +583,71 @@ class GAXIPTV {
         this.updateCounts();
         this.switchPage('homePage');
         if (this.channels.length > 0) this.loadChannel(this.channels[0]);
+        this.showNotification(`Loaded: ${p.name}`, 'success');
     }
 
     saveNewPlaylist() {
+        if (this.newPlaylistChannels.length === 0) return;
         const name = document.getElementById('newPlaylistName').value.trim() || 'Custom Playlist';
         let m3u = '#EXTM3U\n';
         this.newPlaylistChannels.forEach(c => {
             m3u += `#EXTINF:-1 tvg-logo="${c.logo}" group-title="${c.group}",${c.name}\n${c.url}\n`;
         });
-
         this.playlists.push({ name, content: m3u });
-        localStorage.setItem('playlists', JSON.stringify(this.playlists));
+        this._save('playlists', this.playlists);
         this.resetPlaylistCreator();
         this.loadPlaylists();
         this.switchPage('playlistsPage');
+        this.showNotification(`"${name}" saved!`, 'success');
     }
 
     addChannelToPlaylist() {
         const nameInp = document.getElementById('newChannelName');
-        const urlInp = document.getElementById('newChannelUrl');
-        if (!nameInp || !urlInp) return;
-        
-        const name = nameInp.value.trim();
-        const url = urlInp.value.trim();
-        if (!name || !url) return;
-
+        const urlInp  = document.getElementById('newChannelUrl');
         const logoInp = document.getElementById('newChannelLogo');
-        const groupInp = document.getElementById('newChannelGroupInput');
+        const grpInp  = document.getElementById('newChannelGroupInput');
 
-        this.newPlaylistChannels.push({
-            name, url, 
-            logo: (logoInp ? logoInp.value.trim() : '') || 'https://picsum.photos/seed/chan/200/200.jpg',
-            group: (groupInp ? groupInp.value : '') || 'General',
-            id: Math.random().toString(36).substr(2, 9)
-        });
+        const name = nameInp ? nameInp.value.trim() : '';
+        const url  = urlInp  ? urlInp.value.trim()  : '';
+
+        if (!name || !url) {
+            this.showNotification('Name and URL are required', 'error');
+            return;
+        }
+
+        const logo  = (logoInp && logoInp.value.trim()) ? logoInp.value.trim() : `https://picsum.photos/seed/${Date.now()}/200/200.jpg`;
+        const group = (grpInp && grpInp.value.trim())   ? grpInp.value.trim()  : 'General';
+
+        this.newPlaylistChannels.push({ name, url, logo, group, id: Math.random().toString(36).substring(2, 11) });
+        if (nameInp) nameInp.value = '';
+        if (urlInp)  urlInp.value  = '';
         this.renderNewPlaylistPreview();
+        this.showNotification(`"${name}" added to draft`, 'success');
     }
 
     renderNewPlaylistPreview() {
-        const list = document.getElementById('newPlaylistChannelsList');
-        document.getElementById('emptyChannelList').style.display = this.newPlaylistChannels.length ? 'none' : 'block';
-        document.getElementById('saveNewPlaylistBtn').disabled = !this.newPlaylistChannels.length;
-        document.getElementById('channelCount').textContent = this.newPlaylistChannels.length;
-        list.innerHTML = '';
+        const listEl   = document.getElementById('newPlaylistChannelsList');
+        const emptyEl  = document.getElementById('emptyChannelList');
+        const countEl  = document.getElementById('channelCount');
+        const saveBtn  = document.getElementById('saveNewPlaylistBtn');
+
+        const count = this.newPlaylistChannels.length;
+        if (emptyEl)  emptyEl.style.display  = count ? 'none'    : 'block';
+        if (saveBtn)  saveBtn.disabled         = !count;
+        if (countEl)  countEl.textContent      = count;
+        if (!listEl)  return;
+
+        listEl.innerHTML = '';
         this.newPlaylistChannels.forEach((c, i) => {
             const item = document.createElement('div');
             item.className = 'playlist-item';
-            item.innerHTML = `<span>${c.name}</span> <button class="btn btn-secondary" onclick="app.removeChannelFromPreview(${i})"><i class="fas fa-times"></i></button>`;
-            list.appendChild(item);
+            item.style.marginBottom = '8px';
+            item.innerHTML = `
+                <div class="playlist-info"><div class="playlist-name">${c.name}</div><div class="playlist-meta">${c.group}</div></div>
+                <button class="btn btn-secondary"><i class="fas fa-times"></i></button>
+            `;
+            item.querySelector('.btn').addEventListener('click', () => this.removeChannelFromPreview(i));
+            listEl.appendChild(item);
         });
     }
 
@@ -610,168 +658,132 @@ class GAXIPTV {
 
     resetPlaylistCreator() {
         this.newPlaylistChannels = [];
-        document.getElementById('newPlaylistName').value = '';
+        const el = document.getElementById('newPlaylistName');
+        if (el) el.value = '';
         this.renderNewPlaylistPreview();
     }
 
-    /**
-     * UI & Events
-     */
-    setupEventListeners() {
-        // Keyboard Shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT') return; // Don't trigger when typing in search
+    /* ============ RECENTLY PLAYED ============ */
 
-            switch(e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    this.togglePlayPause();
-                    break;
-                case 'KeyM':
-                    this.toggleMute();
-                    break;
-                case 'KeyF':
-                    this.toggleFullscreen();
-                    break;
-                case 'KeyP':
-                    this.togglePiP();
-                    break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    this.video.volume = Math.min(1, this.video.volume + 0.1);
-                    this.volumeSlider.value = this.video.volume;
-                    this.showVolumeIndicator(this.video.volume);
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    this.video.volume = Math.max(0, this.video.volume - 0.1);
-                    this.volumeSlider.value = this.video.volume;
-                    this.showVolumeIndicator(this.video.volume);
-                    break;
-            }
-        });
-
-        document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', () => this.switchPage(i.dataset.page)));
-        
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                this.searchQuery = e.target.value;
-                this.renderChannels();
-            });
-        }
-
-        const loadBuiltinBtn = document.getElementById('loadBuiltinBtn');
-        if (loadBuiltinBtn) {
-            loadBuiltinBtn.addEventListener('click', () => this.loadM3UPlaylist().then(() => {
-                this.renderCategories();
-                this.renderChannels();
-            }));
-        }
-
-        const sleepTimerBtn = document.getElementById('sleepTimerBtn');
-        if (sleepTimerBtn) sleepTimerBtn.addEventListener('click', () => this.showDialog('sleepTimerModal'));
-        
-        const addChannelBtn = document.getElementById('addChannelToListBtn');
-        if (addChannelBtn) addChannelBtn.addEventListener('click', () => this.addChannelToPlaylist());
-        
-        const savePlaylistBtn = document.getElementById('saveNewPlaylistBtn');
-        if (savePlaylistBtn) savePlaylistBtn.addEventListener('click', () => this.saveNewPlaylist());
-        
-        this.setupCustomSelect('newChannelGroup', 'groupDropdown', 'newChannelGroupInput');
-        this.setupCustomSelect('newChannelRes', 'resDropdown', 'newChannelResInput');
-        this.setupCustomSelect('newChannelLang', 'langDropdown', 'newChannelLangInput');
-
-        const closeAbout = document.getElementById('closeAbout');
-        if (closeAbout) closeAbout.addEventListener('click', () => this.hideDialog('aboutDialog'));
-        
-        const aboutItem = document.getElementById('aboutItem');
-        if (aboutItem) aboutItem.addEventListener('click', () => this.showDialog('aboutDialog'));
-        
-        const subscribeBtn = document.getElementById('subscribeBtn');
-        if (subscribeBtn) subscribeBtn.addEventListener('click', () => window.open('https://youtube.com/@GamerArnabXYZ'));
-        
-        const scanBtn = document.getElementById('scanBuiltinBtn');
-        if (scanBtn) scanBtn.addEventListener('click', () => this.showDialog('scannerModal'));
-
-        const startScanBtn = document.getElementById('startScanBtn');
-        if (startScanBtn) startScanBtn.addEventListener('click', () => this.startScan());
-
-        const stopScanBtn = document.getElementById('stopScanBtn');
-        if (stopScanBtn) stopScanBtn.addEventListener('click', () => this.isScanning = false);
-
-        const loadWorkingBtn = document.getElementById('loadWorkingBtn');
-        if (loadWorkingBtn) loadWorkingBtn.addEventListener('click', () => this.loadWorkingChannels());
+    addToRecentlyPlayed(channel) {
+        this.recentlyPlayed = this.recentlyPlayed.filter(c => c.id !== channel.id);
+        this.recentlyPlayed.unshift(channel);
+        if (this.recentlyPlayed.length > 10) this.recentlyPlayed.pop();
+        this._save('recentlyPlayed', this.recentlyPlayed);
+        this.renderRecentlyPlayed();
     }
 
+    renderRecentlyPlayed() {
+        const grid = document.getElementById('recentlyPlayedGrid');
+        const sec  = document.getElementById('recentlyPlayedSection');
+        if (!grid || !sec) return;
+        if (!this.recentlyPlayed.length) { sec.style.display = 'none'; return; }
+        sec.style.display = 'block';
+        grid.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        this.recentlyPlayed.forEach(c => frag.appendChild(this.createChannelCard(c)));
+        grid.appendChild(frag);
+    }
+
+    clearRecentlyPlayed() {
+        this.recentlyPlayed = [];
+        this._save('recentlyPlayed', []);
+        this.renderRecentlyPlayed();
+    }
+
+    /* ============ SLEEP TIMER ============ */
+
+    setSleepTimer(mins) {
+        this.clearSleepTimer();
+        this.sleepTimerEnd = Date.now() + mins * 60000;
+        this.sleepTimer = setTimeout(() => {
+            this.video.pause();
+            this.showNotification('Sleep timer: stream paused', 'info');
+            this.clearSleepTimer();
+        }, mins * 60000);
+        const cancelBtn = document.getElementById('cancelTimerBtn');
+        if (cancelBtn) cancelBtn.style.display = 'block';
+        this.hideDialog('sleepTimerModal');
+        this.showNotification(`Sleep timer: ${mins} min`, 'success');
+    }
+
+    clearSleepTimer() {
+        if (this.sleepTimer) clearTimeout(this.sleepTimer);
+        this.sleepTimer    = null;
+        this.sleepTimerEnd = null;
+        const cancelBtn = document.getElementById('cancelTimerBtn');
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        const statusEl = document.getElementById('timerStatus');
+        if (statusEl) statusEl.textContent = 'Set auto-pause timer';
+    }
+
+    updateTimerStatus() {
+        if (!this.sleepTimerEnd) return;
+        const rem = Math.ceil((this.sleepTimerEnd - Date.now()) / 60000);
+        const statusEl = document.getElementById('timerStatus');
+        if (statusEl) statusEl.textContent = rem > 0 ? `Pausing in ${rem} min` : 'Pausing...';
+        if (rem <= 0) this.clearSleepTimer();
+    }
+
+    /* ============ SCANNER ============ */
+
     async startScan() {
-        if (this.channels.length === 0) {
-            this.showNotification('No channels to scan', 'error');
-            return;
-        }
+        if (this.channels.length === 0) { this.showNotification('No channels to scan', 'error'); return; }
 
-        this.isScanning = true;
+        this.isScanning    = true;
         this.workingChannels = [];
-        const results = document.getElementById('scanResults');
+        const results  = document.getElementById('scanResults');
         const startBtn = document.getElementById('startScanBtn');
-        const stopBtn = document.getElementById('stopScanBtn');
-        const loadBtn = document.getElementById('loadWorkingBtn');
-        const countText = document.getElementById('scanCount');
-        const subStatus = document.getElementById('scanSubStatus');
-        const progress = document.getElementById('scanProgress');
+        const stopBtn  = document.getElementById('stopScanBtn');
+        const loadBtn  = document.getElementById('loadWorkingBtn');
+        const countEl  = document.getElementById('scanCount');
+        const subEl    = document.getElementById('scanSubStatus');
+        const progEl   = document.getElementById('scanProgress');
 
-        results.innerHTML = '';
-        startBtn.style.display = 'none';
-        stopBtn.style.display = 'flex';
-        loadBtn.style.display = 'none';
+        if (results)  results.innerHTML = '';
+        if (startBtn) startBtn.style.display = 'none';
+        if (stopBtn)  stopBtn.style.display  = 'flex';
+        if (loadBtn)  loadBtn.style.display  = 'none';
 
         for (let i = 0; i < this.channels.length; i++) {
             if (!this.isScanning) break;
+            const ch = this.channels[i];
+            const pct = Math.round(((i + 1) / this.channels.length) * 100);
 
-            const channel = this.channels[i];
-            const percent = Math.round(((i + 1) / this.channels.length) * 100);
-            
-            countText.textContent = `SCANNING ${i + 1}/${this.channels.length}`;
-            subStatus.textContent = channel.name.toUpperCase();
-            progress.style.width = `${percent}%`;
+            if (countEl) countEl.textContent = `SCANNING ${i + 1}/${this.channels.length}`;
+            if (subEl)   subEl.textContent   = ch.name.toUpperCase();
+            if (progEl)  progEl.style.width  = `${pct}%`;
 
-            const item = document.createElement('div');
-            item.style.padding = '10px 15px';
-            item.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            item.style.fontSize = '0.75rem';
-            item.style.display = 'flex';
-            item.style.justifyContent = 'space-between';
-            item.innerHTML = `<span>${channel.name}</span> <span class="status">CHECKING...</span>`;
-            results.prepend(item);
+            const row = document.createElement('div');
+            row.style.cssText = 'padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.75rem;display:flex;justify-content:space-between;gap:10px;';
+            row.innerHTML = `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.name}</span><span class="scan-status" style="flex-shrink:0;color:var(--text-dim);">CHECKING...</span>`;
+            if (results) results.prepend(row);
 
-            const isWorking = await this.checkStreamWorking(channel.url);
-            
-            const statusSpan = item.querySelector('.status');
-            if (isWorking) {
-                this.workingChannels.push(channel);
-                statusSpan.textContent = 'ONLINE';
-                statusSpan.style.color = 'var(--accent-neon)';
+            const ok = await this.checkStreamWorking(ch.url);
+            const statusSpan = row.querySelector('.scan-status');
+            if (ok) {
+                this.workingChannels.push(ch);
+                if (statusSpan) { statusSpan.textContent = '✓ ONLINE'; statusSpan.style.color = 'var(--accent-neon)'; }
             } else {
-                statusSpan.textContent = 'OFFLINE';
-                statusSpan.style.color = 'var(--accent-secondary)';
+                if (statusSpan) { statusSpan.textContent = '✗ OFFLINE'; statusSpan.style.color = 'var(--accent-secondary)'; }
             }
         }
 
         this.isScanning = false;
-        startBtn.style.display = 'flex';
-        stopBtn.style.display = 'none';
-        countText.textContent = 'SCAN COMPLETE';
-        subStatus.textContent = `${this.workingChannels.length} STREAMS ONLINE`;
-        if (this.workingChannels.length > 0) loadBtn.style.display = 'flex';
+        if (startBtn) startBtn.style.display = 'flex';
+        if (stopBtn)  stopBtn.style.display  = 'none';
+        if (countEl)  countEl.textContent    = 'SCAN COMPLETE';
+        if (subEl)    subEl.textContent      = `${this.workingChannels.length} STREAMS ONLINE`;
+        if (loadBtn && this.workingChannels.length > 0) loadBtn.style.display = 'flex';
     }
 
     async checkStreamWorking(url) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             const v = document.createElement('video');
-            const timeout = setTimeout(() => { v.src = ''; resolve(false); }, 6000);
-            
-            v.oncanplay = () => { clearTimeout(timeout); v.src = ''; resolve(true); };
-            v.onerror = () => { clearTimeout(timeout); v.src = ''; resolve(false); };
+            v.muted = true;
+            const t = setTimeout(() => { v.src = ''; resolve(false); }, 5000);
+            v.oncanplay = () => { clearTimeout(t); v.src = ''; resolve(true); };
+            v.onerror   = () => { clearTimeout(t); v.src = ''; resolve(false); };
             v.src = url;
             v.load();
         });
@@ -788,97 +800,154 @@ class GAXIPTV {
         if (this.channels.length > 0) this.loadChannel(this.channels[0]);
     }
 
-    setupCustomSelect(id, dropId, hidId) {
-        const inp = document.getElementById(id);
-        const drop = document.getElementById(dropId);
-        if (!inp || !drop) return;
+    /* ============ UI ============ */
 
-        inp.addEventListener('click', (e) => {
-            e.stopPropagation();
-            drop.parentElement.classList.toggle('active');
+    setupEventListeners() {
+        // Keyboard shortcuts (desktop)
+        document.addEventListener('keydown', e => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            switch (e.code) {
+                case 'Space':   e.preventDefault(); this.togglePlayPause(); break;
+                case 'KeyM':    this.toggleMute(); break;
+                case 'KeyF':    this.toggleFullscreen(); break;
+                case 'KeyP':    this.togglePiP(); break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.video.volume = Math.min(1, this.video.volume + 0.1);
+                    this.volumeSlider.value = this.video.volume;
+                    this.video.muted = false;
+                    this.updateMuteButton();
+                    this.showVolumeIndicator(this.video.volume);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.video.volume = Math.max(0, this.video.volume - 0.1);
+                    this.volumeSlider.value = this.video.volume;
+                    if (this.video.volume === 0) this.video.muted = true;
+                    this.updateMuteButton();
+                    this.showVolumeIndicator(this.video.volume);
+                    break;
+            }
         });
-        drop.querySelectorAll('.custom-select-option').forEach(opt => {
-            opt.addEventListener('click', () => {
-                inp.value = opt.textContent;
-                const hid = document.getElementById(hidId);
-                if (hid) hid.value = opt.dataset.value;
-                drop.parentElement.classList.remove('active');
+
+        // Bottom nav
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => this.switchPage(item.dataset.page));
+        });
+
+        // Search
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            let searchDebounce;
+            searchInput.addEventListener('input', e => {
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(() => {
+                    this.searchQuery = e.target.value;
+                    this.renderChannels();
+                }, 200);
+            });
+        }
+
+        // Load builtin
+        const loadBuiltinBtn = document.getElementById('loadBuiltinBtn');
+        if (loadBuiltinBtn) {
+            loadBuiltinBtn.addEventListener('click', async () => {
+                loadBuiltinBtn.disabled = true;
+                loadBuiltinBtn.textContent = 'Loading...';
+                await this.loadM3UPlaylist();
+                this.renderCategories();
+                this.renderChannels();
+                this.switchPage('homePage');
+                loadBuiltinBtn.disabled = false;
+                loadBuiltinBtn.textContent = 'LOAD';
+            });
+        }
+
+        // Sleep timer
+        const sleepBtn = document.getElementById('sleepTimerBtn');
+        if (sleepBtn) sleepBtn.addEventListener('click', () => this.showDialog('sleepTimerModal'));
+
+        // Add playlist (new)
+        const addPL = document.getElementById('addPlaylist');
+        if (addPL) addPL.addEventListener('click', () => this.switchPage('createM3UPage'));
+
+        // Add channel to draft
+        const addChBtn = document.getElementById('addChannelToListBtn');
+        if (addChBtn) addChBtn.addEventListener('click', () => this.addChannelToPlaylist());
+
+        // Save playlist
+        const savePLBtn = document.getElementById('saveNewPlaylistBtn');
+        if (savePLBtn) savePLBtn.addEventListener('click', () => this.saveNewPlaylist());
+
+        // About
+        const aboutItem = document.getElementById('aboutItem');
+        if (aboutItem) aboutItem.addEventListener('click', () => this.showDialog('aboutDialog'));
+
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        if (subscribeBtn) subscribeBtn.addEventListener('click', () => window.open('https://youtube.com/@GamerArnabXYZ', '_blank'));
+
+        // Favorites shortcut (Hub)
+        const favItem = document.getElementById('favoritesItem');
+        if (favItem) {
+            favItem.addEventListener('click', () => {
+                this.switchPage('homePage');
+                this.setActiveCategory('favorites');
+            });
+        }
+
+        // Scanner
+        const startScanBtn = document.getElementById('startScanBtn');
+        if (startScanBtn) startScanBtn.addEventListener('click', () => this.startScan());
+
+        const stopScanBtn = document.getElementById('stopScanBtn');
+        if (stopScanBtn) stopScanBtn.addEventListener('click', () => { this.isScanning = false; });
+
+        const loadWorkingBtn = document.getElementById('loadWorkingBtn');
+        if (loadWorkingBtn) loadWorkingBtn.addEventListener('click', () => this.loadWorkingChannels());
+
+        // Close modals on backdrop click
+        document.querySelectorAll('.modal').forEach(m => {
+            m.addEventListener('click', e => {
+                if (e.target === m) this.hideDialog(m.id);
             });
         });
-        document.addEventListener('click', () => drop.parentElement.classList.remove('active'));
     }
 
     switchPage(id) {
         document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === id));
         document.querySelectorAll('.page-section').forEach(s => s.classList.toggle('active', s.id === id));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    showDialog(id) { document.getElementById(id).classList.add('active'); }
-    hideDialog(id) { document.getElementById(id).classList.remove('active'); }
+    showDialog(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('active');
+    }
+
+    hideDialog(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    }
 
     showNotification(msg, type = 'info') {
+        // Remove old notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
         const n = document.createElement('div');
         n.className = `notification ${type}`;
-        n.innerHTML = `<span>${msg}</span>`;
+        n.textContent = msg;
         document.body.appendChild(n);
         setTimeout(() => n.remove(), 3000);
     }
 
     updateCounts() {
-        document.getElementById('builtinCount').textContent = `${this.channels.length} channels`;
+        const el = document.getElementById('builtinCount');
+        if (el) el.textContent = `${this.channels.length} channels`;
     }
 
-    /**
-     * Extra Features
-     */
-    addToRecentlyPlayed(channel) {
-        this.recentlyPlayed = this.recentlyPlayed.filter(c => c.id !== channel.id);
-        this.recentlyPlayed.unshift(channel);
-        if (this.recentlyPlayed.length > 10) this.recentlyPlayed.pop();
-        localStorage.setItem('recentlyPlayed', JSON.stringify(this.recentlyPlayed));
-        this.renderRecentlyPlayed();
-    }
-
-    renderRecentlyPlayed() {
-        const grid = document.getElementById('recentlyPlayedGrid');
-        const sec = document.getElementById('recentlyPlayedSection');
-        if (!this.recentlyPlayed.length) { sec.style.display = 'none'; return; }
-        sec.style.display = 'block';
-        grid.innerHTML = '';
-        this.recentlyPlayed.forEach(c => grid.appendChild(this.createChannelCard(c)));
-    }
-
-    clearRecentlyPlayed() {
-        this.recentlyPlayed = [];
-        localStorage.setItem('recentlyPlayed', '[]');
-        this.renderRecentlyPlayed();
-    }
-
-    setSleepTimer(mins) {
-        this.clearSleepTimer();
-        this.sleepTimerEnd = Date.now() + mins * 60000;
-        this.sleepTimer = setTimeout(() => {
-            this.video.pause();
-            this.showNotification('Sleep timer ended', 'info');
-            this.clearSleepTimer();
-        }, mins * 60000);
-        document.getElementById('cancelTimerBtn').style.display = 'block';
-        this.hideDialog('sleepTimerModal');
-    }
-
-    clearSleepTimer() {
-        if (this.sleepTimer) clearTimeout(this.sleepTimer);
-        this.sleepTimer = null;
-        this.sleepTimerEnd = null;
-        document.getElementById('cancelTimerBtn').style.display = 'none';
-        document.getElementById('timerStatus').textContent = 'Set a timer to automatically pause playback.';
-    }
-
-    updateTimerStatus() {
-        if (!this.sleepTimerEnd) return;
-        const rem = Math.ceil((this.sleepTimerEnd - Date.now()) / 60000);
-        if (rem > 0) document.getElementById('timerStatus').textContent = `Pause in ${rem} minutes`;
-        else this.clearSleepTimer();
+    updateClock() {
+        const el = document.getElementById('headerClock');
+        if (!el) return;
+        el.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     }
 }
 
