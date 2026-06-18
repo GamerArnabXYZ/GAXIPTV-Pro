@@ -692,7 +692,100 @@ class GAXIPTV {
         if (subscribeBtn) subscribeBtn.addEventListener('click', () => window.open('https://youtube.com/@GamerArnabXYZ'));
         
         const scanBtn = document.getElementById('scanBuiltinBtn');
-        if (scanBtn) scanBtn.addEventListener('click', () => this.showNotification('Scanner logic requires more resources. Check again later.', 'info'));
+        if (scanBtn) scanBtn.addEventListener('click', () => this.showDialog('scannerModal'));
+
+        const startScanBtn = document.getElementById('startScanBtn');
+        if (startScanBtn) startScanBtn.addEventListener('click', () => this.startScan());
+
+        const stopScanBtn = document.getElementById('stopScanBtn');
+        if (stopScanBtn) stopScanBtn.addEventListener('click', () => this.isScanning = false);
+
+        const loadWorkingBtn = document.getElementById('loadWorkingBtn');
+        if (loadWorkingBtn) loadWorkingBtn.addEventListener('click', () => this.loadWorkingChannels());
+    }
+
+    async startScan() {
+        if (this.channels.length === 0) {
+            this.showNotification('No channels to scan', 'error');
+            return;
+        }
+
+        this.isScanning = true;
+        this.workingChannels = [];
+        const results = document.getElementById('scanResults');
+        const startBtn = document.getElementById('startScanBtn');
+        const stopBtn = document.getElementById('stopScanBtn');
+        const loadBtn = document.getElementById('loadWorkingBtn');
+        const countText = document.getElementById('scanCount');
+        const subStatus = document.getElementById('scanSubStatus');
+        const progress = document.getElementById('scanProgress');
+
+        results.innerHTML = '';
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'flex';
+        loadBtn.style.display = 'none';
+
+        for (let i = 0; i < this.channels.length; i++) {
+            if (!this.isScanning) break;
+
+            const channel = this.channels[i];
+            const percent = Math.round(((i + 1) / this.channels.length) * 100);
+            
+            countText.textContent = `SCANNING ${i + 1}/${this.channels.length}`;
+            subStatus.textContent = channel.name.toUpperCase();
+            progress.style.width = `${percent}%`;
+
+            const item = document.createElement('div');
+            item.style.padding = '10px 15px';
+            item.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            item.style.fontSize = '0.75rem';
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            item.innerHTML = `<span>${channel.name}</span> <span class="status">CHECKING...</span>`;
+            results.prepend(item);
+
+            const isWorking = await this.checkStreamWorking(channel.url);
+            
+            const statusSpan = item.querySelector('.status');
+            if (isWorking) {
+                this.workingChannels.push(channel);
+                statusSpan.textContent = 'ONLINE';
+                statusSpan.style.color = 'var(--accent-neon)';
+            } else {
+                statusSpan.textContent = 'OFFLINE';
+                statusSpan.style.color = 'var(--accent-secondary)';
+            }
+        }
+
+        this.isScanning = false;
+        startBtn.style.display = 'flex';
+        stopBtn.style.display = 'none';
+        countText.textContent = 'SCAN COMPLETE';
+        subStatus.textContent = `${this.workingChannels.length} STREAMS ONLINE`;
+        if (this.workingChannels.length > 0) loadBtn.style.display = 'flex';
+    }
+
+    async checkStreamWorking(url) {
+        return new Promise((resolve) => {
+            const v = document.createElement('video');
+            const timeout = setTimeout(() => { v.src = ''; resolve(false); }, 6000);
+            
+            v.oncanplay = () => { clearTimeout(timeout); v.src = ''; resolve(true); };
+            v.onerror = () => { clearTimeout(timeout); v.src = ''; resolve(false); };
+            v.src = url;
+            v.load();
+        });
+    }
+
+    loadWorkingChannels() {
+        this.channels = [...this.workingChannels];
+        this.extractCategories();
+        this.renderCategories();
+        this.renderChannels();
+        this.updateCounts();
+        this.hideDialog('scannerModal');
+        this.showNotification(`Loaded ${this.channels.length} working streams`, 'success');
+        if (this.channels.length > 0) this.loadChannel(this.channels[0]);
     }
 
     setupCustomSelect(id, dropId, hidId) {
