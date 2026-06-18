@@ -66,6 +66,15 @@ class GAXIPTV {
         // Timer update interval
         setInterval(() => this.updateTimerStatus(), 1000);
         setInterval(() => this.updateClock(), 1000);
+
+        // Hide splash screen
+        setTimeout(() => {
+            const splash = document.getElementById('splashScreen');
+            if (splash) {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.visibility = 'hidden', 800);
+            }
+        }, 2000);
     }
 
     updateClock() {

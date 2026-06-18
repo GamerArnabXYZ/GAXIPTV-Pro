@@ -13,6 +13,71 @@
     --radius-premium: 20px;
 }
 
+/* Cinematic Noise Texture */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url('https://grainy-gradients.vercel.app/noise.svg');
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* Splash Screen Glitch Effect */
+#splashScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-deep);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s ease-out, visibility 0.8s;
+}
+
+.splash-logo {
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--accent-glow);
+    text-shadow: 2px 0 var(--accent-purple), -2px 0 var(--accent-neon);
+    animation: glitch 1s infinite linear alternate-reverse;
+}
+
+@keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-3px, 3px); }
+    40% { transform: translate(-3px, -3px); }
+    60% { transform: translate(3px, 3px); }
+    80% { transform: translate(3px, -3px); }
+    100% { transform: translate(0); }
+}
+
+.splash-loader {
+    width: 200px;
+    height: 2px;
+    background: rgba(255,255,255,0.1);
+    margin-top: 30px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+}
+
+.splash-loader::after {
+    content: "";
+    position: absolute;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+    animation: loadingLine 1.5s infinite;
+}
+
+@keyframes loadingLine {
+    100% { left: 100%; }
+}
+
 * {
     margin: 0;
     padding: 0;
