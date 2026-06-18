@@ -353,8 +353,19 @@ class GAXIPTV {
 
     renderCategories() {
         const tabs = document.getElementById('categoryTabs');
+        if (!tabs) return;
         tabs.innerHTML = '';
+        
+        // All Channels
         tabs.appendChild(this.createCategoryTab('all', 'All', 'fa-globe', this.channels.length));
+
+        // Favorites Tab (Dynamic)
+        if (this.favorites.length > 0) {
+            const favCount = this.channels.filter(c => this.favorites.includes(c.id)).length;
+            if (favCount > 0) {
+                tabs.appendChild(this.createCategoryTab('favorites', 'Favorites', 'fa-heart', favCount));
+            }
+        }
 
         this.categories.forEach(category => {
             const count = this.channels.filter(c => c.group === category).length;
