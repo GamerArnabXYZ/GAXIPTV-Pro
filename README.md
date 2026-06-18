@@ -1,28 +1,34 @@
-# GAXIPTV Professional - IPTV Platform
+# GAXIPTV Pro - Neon Edition (v3.0) 🚀
 
-**GAXIPTV** ek professional IPTV platform hai jise seamless streaming experience ke liye banaya gaya hai. Isme aap apni manpasand M3U playlists load kar sakte hain aur channels dekh sakte hain.
+**GAXIPTV Pro** ek advanced, high-performance IPTV platform hai jise modern 'Glassmorphism' aur 'Neon' aesthetic ke saath design kiya gaya hai. Ye ek fully client-side application hai jo aapke browser mein seamless streaming experience provide karta hai.
 
-## Features
-- **Professional Player**: HLS.js support ke saath high-quality streaming.
-- **Playlist Manager**: Custom M3U playlists add, edit aur delete karein.
-- **Channel Scanner**: Working channels ko scan aur filter karein.
-- **Custom M3U Creator**: Apni khud ki playlist banayein.
-- **Favorites**: Manpasand channels ko save karein.
-- **Recently Played**: Haal hi mein dekhe gaye channels ka track rakhein. (New!)
-- **Sleep Timer**: Auto-off feature ke saath aaram se so jayein. (New!)
+## ✨ Naye Upgrades (v3.0 Neon)
+- **Glassmorphism UI**: Ek futuristic aur premium look blur effects aur neon accents ke saath.
+- **Neon Live Badge**: Glowing 'Live' indicator jo streaming ko aur vibrant banata hai.
+- **Recently Viewed**: Aapke haal hi mein dekhe gaye channels ka smart track aur clear history option.
+- **Advanced Sleep Timer**: Auto-pause functionality ke saath aaram se binge-watch karein.
+- **Optimized Performance**: Zero-lag navigation aur faster stream loading.
 
-## Installation
-Sirf `index.html` ko browser mein open karein aur streaming shuru karein. Kisi server ki zaroorat nahi hai.
+## 🛠 Features
+- **Pro Player**: HLS.js powered high-quality playback.
+- **M3U Architect**: Apni khud ki custom playlists direct app ke andar banayein.
+- **Playlist Hub**: Multiple M3U collections manage aur switch karein.
+- **Favorites**: Apne top channels ko 'Neon Heart' ke saath save karein.
+- **Responsive Design**: Mobile, Tablet aur Desktop par ek jaisa smooth experience.
 
-## Tech Stack
-- HTML5
-- CSS3 (Vanilla)
-- JavaScript (ES6+)
-- [HLS.js](https://github.com/video-dev/hls.js/)
+## 🚀 Quick Start
+1. Repository ko clone karein ya `index.html` download karein.
+2. `index.html` ko kisi bhi modern browser mein open karein.
+3. Apni M3U playlist load karein aur premium streaming ka maza lein!
 
-## Developer
-- **Name**: GamerArnabXYZ
-- **Publisher**: GAX Studio
+## 🧪 Tech Stack
+- **Frontend**: HTML5, CSS3 (Custom Properties & Glassmorphism), Vanilla JS (ES6+).
+- **Streaming Engine**: [HLS.js](https://github.com/video-dev/hls.js/).
+- **Icons**: Font Awesome 6.4.
+
+## 👨‍💻 Developer
+- **Author**: GamerArnabXYZ
+- **Studio**: GAX Studio
 
 ---
-*Developed with ❤️ by GAXIPTV Team.*
+*Developed with ❤️ and Passion for the IPTV Community.*

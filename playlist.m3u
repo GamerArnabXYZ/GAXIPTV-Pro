@@ -1,0 +1,16 @@
+#EXTM3U
+
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/GamerArnabXYZ/Assets/main/logos/test.png" group-title="Movies",Big Buck Bunny (4K Test)
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/GamerArnabXYZ/Assets/main/logos/nature.png" group-title="Nature",Wildlife 4K
+http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8
+
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/GamerArnabXYZ/Assets/main/logos/news.png" group-title="News",Al Jazeera English
+https://live-alsat.akamaized.net/hls/live/2012480/alsat/index.m3u8
+
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/GamerArnabXYZ/Assets/main/logos/movie.png" group-title="Movies",Sintel (Short Film)
+https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8
+
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/GamerArnabXYZ/Assets/main/logos/sports.png" group-title="Sports",Red Bull TV
+https://rbmn-live.akamaized.net/hls/live/590964/bo1/master.m3u8
