@@ -1,0 +1,454 @@
+:root {
+    --bg-deep: #05050a;
+    --bg-glass: rgba(20, 20, 35, 0.7);
+    --bg-card: rgba(30, 30, 50, 0.5);
+    --accent-glow: #00f2ff;
+    --accent-purple: #bc13fe;
+    --accent-neon: #39ff14;
+    --text-main: #e0e0ff;
+    --text-dim: #9090b0;
+    --glass-blur: blur(12px);
+    --neon-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    --transition-smooth: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    --radius-premium: 20px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: radial-gradient(circle at top right, #1a1a3a, var(--bg-deep));
+    background-attachment: fixed;
+    color: var(--text-main);
+    line-height: 1.6;
+    overflow-x: hidden;
+    padding-bottom: 90px;
+}
+
+/* Header Glassmorphism */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: var(--bg-glass);
+    backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    padding: 0 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.logo {
+    font-size: 1.6rem;
+    font-weight: 900;
+    background: linear-gradient(to right, var(--accent-glow), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo i {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+
+.header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.search-box {
+    position: relative;
+    width: 250px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 40px 10px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    color: white;
+    font-size: 0.9rem;
+    transition: var(--transition-smooth);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-glow);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: var(--neon-shadow);
+}
+
+/* Main Container */
+.main-content {
+    margin-top: 85px;
+    padding: 0 20px;
+}
+
+/* Page Animations */
+.page-section {
+    display: none;
+    animation: slideUpFade 0.6s ease-out;
+}
+
+.page-section.active {
+    display: block;
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(30px); filter: blur(10px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* Video Player - Cinema Look */
+.player-container {
+    background: #000;
+    border-radius: var(--radius-premium);
+    overflow: hidden;
+    margin-bottom: 30px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 40px rgba(0, 242, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.video-container {
+    position: relative;
+    padding-bottom: 56.25%;
+}
+
+#liveVideo {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.controls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 40px;
+    opacity: 0;
+    transition: var(--transition-smooth);
+}
+
+.video-container:hover .controls {
+    opacity: 1;
+}
+
+.control-btn, .mute-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.control-btn:hover {
+    background: var(--accent-glow);
+    color: black;
+    transform: scale(1.15);
+}
+
+/* Channel Info Card */
+.channel-info {
+    background: var(--bg-glass);
+    backdrop-filter: var(--glass-blur);
+    border-radius: var(--radius-premium);
+    padding: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.channel-logo {
+    width: 70px;
+    height: 70px;
+    border-radius: 15px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+}
+
+.channel-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-glow);
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+/* Category Tabs - Modern Pills */
+.category-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+    overflow-x: auto;
+    padding: 5px;
+    scrollbar-width: none;
+}
+
+.category-tab {
+    padding: 10px 22px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-tab:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.category-tab.active {
+    background: linear-gradient(135deg, var(--accent-glow), var(--accent-purple));
+    color: white;
+    border: none;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* Channel Grid & Cards */
+.channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+}
+
+.channel-card {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-premium);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.channel-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, transparent, rgba(0, 242, 255, 0.05));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.channel-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--accent-glow);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0, 242, 255, 0.15);
+}
+
+.channel-card:hover::before { opacity: 1; }
+
+.channel-card.active {
+    border-color: var(--accent-glow);
+    background: rgba(0, 242, 255, 0.1);
+}
+
+.channel-card-logo-container {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.2);
+    border-radius: 15px;
+}
+
+.channel-card-logo {
+    max-width: 85%;
+    max-height: 85%;
+    object-fit: contain;
+}
+
+.channel-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text-main);
+}
+
+.favorite-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.favorite-btn.active { color: var(--accent-purple); }
+
+/* Bottom Nav - Neo-morphism Style */
+.bottom-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: var(--bg-glass);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+    z-index: 2000;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+    transition: var(--transition-smooth);
+    width: 60px;
+}
+
+.nav-item.active {
+    color: var(--accent-glow);
+    transform: translateY(-5px);
+}
+
+.nav-icon { font-size: 1.4rem; }
+.nav-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+
+/* Modals - Glass Look */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s;
+}
+
+.modal.active { display: flex; }
+
+.modal-content {
+    background: var(--bg-glass);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-premium);
+    padding: 35px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    border-radius: 30px;
+    border: none;
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.btn-primary { background: var(--accent-glow); color: black; }
+.btn:hover { transform: scale(1.05); box-shadow: var(--neon-shadow); }
+
+/* Glowing Live Badge */
+.live-badge {
+    background: var(--accent-glow);
+    color: black;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 900;
+    font-size: 0.7rem;
+    box-shadow: 0 0 15px var(--accent-glow);
+    animation: neonPulse 2s infinite ease-in-out;
+}
+
+@keyframes neonPulse {
+    0%, 100% { box-shadow: 0 0 10px var(--accent-glow); transform: scale(1); }
+    50% { box-shadow: 0 0 25px var(--accent-glow); transform: scale(1.05); }
+}
+
+/* Glass Notification */
+.notification {
+    position: fixed;
+    top: 90px;
+    right: 20px;
+    background: var(--bg-glass);
+    backdrop-filter: var(--glass-blur);
+    border-left: 4px solid var(--accent-glow);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    z-index: 5000;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideInRight 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+/* Channel Grid Spacing */
+.channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+@media (max-width: 480px) {
+    .channels-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+    }
+}

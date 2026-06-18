@@ -69,7 +69,10 @@
             <div class="category-tabs" id="categoryTabs"></div>
 
             <div id="recentlyPlayedSection" style="display:none; margin-bottom:30px;">
-                <h3 style="font-size:0.9rem; color:var(--text-dim); text-transform:uppercase; margin-bottom:15px; letter-spacing:1px;">Recently Viewed</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="font-size:0.9rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Recently Viewed</h3>
+                    <button class="btn" onclick="app.clearRecentlyPlayed()" style="padding:4px 10px; font-size:0.7rem; background:rgba(255,255,255,0.05);">CLEAR</button>
+                </div>
                 <div class="channels-grid" id="recentlyPlayedGrid"></div>
             </div>
 
