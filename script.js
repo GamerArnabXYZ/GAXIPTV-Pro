@@ -65,6 +65,14 @@ class GAXIPTV {
         
         // Timer update interval
         setInterval(() => this.updateTimerStatus(), 1000);
+        setInterval(() => this.updateClock(), 1000);
+    }
+
+    updateClock() {
+        const clockEl = document.getElementById('headerClock');
+        if (!clockEl) return;
+        const now = new Date();
+        clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     }
 
     /**
