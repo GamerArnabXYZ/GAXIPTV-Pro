@@ -190,6 +190,29 @@
         </div>
     </div>
 
+    <div class="modal" id="scannerModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+                <h3 style="color:var(--accent-glow); font-weight:800; letter-spacing:1px;">STREAM VALIDATOR</h3>
+                <button class="btn" onclick="app.hideDialog('scannerModal')" style="padding:5px 10px; background:rgba(255,255,255,0.05);"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div id="scanStatusContainer" style="background:rgba(255,255,255,0.03); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); margin-bottom:20px; text-align:center;">
+                <div id="scanProgress" style="width:0%; height:4px; background:linear-gradient(to right, var(--accent-glow), var(--accent-purple)); border-radius:2px; transition:0.3s; margin-bottom:15px; box-shadow:0 0 10px var(--accent-glow);"></div>
+                <div id="scanCount" style="font-size:1.2rem; font-weight:900; color:var(--text-main);">READY TO SCAN</div>
+                <div id="scanSubStatus" style="font-size:0.7rem; color:var(--text-dim); margin-top:5px; text-transform:uppercase; letter-spacing:2px;">Select playlist to start</div>
+            </div>
+
+            <div id="scanResults" style="max-height:250px; overflow-y:auto; margin-bottom:20px; border-radius:10px; background:rgba(0,0,0,0.2);"></div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                <button class="btn btn-primary" id="startScanBtn" style="justify-content:center;">START SCAN</button>
+                <button class="btn" id="stopScanBtn" style="display:none; justify-content:center; background:var(--accent-secondary); color:white;">STOP</button>
+                <button class="btn btn-primary" id="loadWorkingBtn" style="display:none; justify-content:center; background:var(--accent-neon); color:black; grid-column:span 2;">LOAD WORKING CHANNELS</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="aboutDialog">
         <div class="modal-content" style="text-align:center;">
             <i class="fas fa-satellite-dish" style="font-size:3rem; color:var(--accent-glow); margin-bottom:20px;"></i>
