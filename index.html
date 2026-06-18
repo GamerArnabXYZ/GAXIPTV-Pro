@@ -20,15 +20,15 @@
     <!-- Header -->
     <header class="header">
         <div class="logo">
-            <i class="fas fa-broadcast-tower"></i>
-            GAXIPTV
+            <i class="fas fa-satellite-dish"></i>
+            <span>GAX<span>IPTV</span></span>
         </div>
         <div class="header-right">
-            <button class="control-btn focusable" id="sleepTimerBtn" title="Sleep Timer" aria-label="Set sleep timer" style="background: transparent; margin-right: 10px;">
-                <i class="fas fa-clock"></i>
+            <button class="control-btn" id="sleepTimerBtn" title="Sleep Timer">
+                <i class="fas fa-moon"></i>
             </button>
             <div class="search-box">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search channels..." aria-label="Search channels">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search premium channels...">
                 <i class="fas fa-search search-icon"></i>
             </div>
         </div>
@@ -302,22 +302,21 @@
         </section>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
-        <div class="nav-item active" data-page="homePage" role="tab" aria-selected="true" aria-controls="homePage" tabindex="0">
+    <nav class="bottom-nav">
+        <div class="nav-item active" data-page="homePage">
             <i class="nav-icon fas fa-home"></i>
             <span class="nav-label">Home</span>
         </div>
-        <div class="nav-item" data-page="playlistsPage" role="tab" aria-selected="false" aria-controls="playlistsPage" tabindex="0">
-            <i class="nav-icon fas fa-list"></i>
+        <div class="nav-item" data-page="playlistsPage">
+            <i class="nav-icon fas fa-folder-open"></i>
             <span class="nav-label">Playlists</span>
         </div>
-        <div class="nav-item" data-page="createM3UPage" role="tab" aria-selected="false" aria-controls="createM3UPage" tabindex="0">
-            <i class="nav-icon fas fa-plus-circle"></i>
-            <span class="nav-label">Create M3U</span>
+        <div class="nav-item" data-page="createM3UPage">
+            <i class="nav-icon fas fa-plus-square"></i>
+            <span class="nav-label">Create</span>
         </div>
-        <div class="nav-item" data-page="morePage" role="tab" aria-selected="false" aria-controls="morePage" tabindex="0">
-            <i class="nav-icon fas fa-ellipsis-h"></i>
+        <div class="nav-item" data-page="morePage">
+            <i class="nav-icon fas fa-grid-2"></i>
             <span class="nav-label">More</span>
         </div>
     </nav>
