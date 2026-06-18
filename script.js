@@ -496,14 +496,21 @@ class GAXIPTV {
     }
 
     addChannelToPlaylist() {
-        const name = document.getElementById('newChannelName').value.trim();
-        const url = document.getElementById('newChannelUrl').value.trim();
+        const nameInp = document.getElementById('newChannelName');
+        const urlInp = document.getElementById('newChannelUrl');
+        if (!nameInp || !urlInp) return;
+        
+        const name = nameInp.value.trim();
+        const url = urlInp.value.trim();
         if (!name || !url) return;
+
+        const logoInp = document.getElementById('newChannelLogo');
+        const groupInp = document.getElementById('newChannelGroupInput');
 
         this.newPlaylistChannels.push({
             name, url, 
-            logo: document.getElementById('newChannelLogo').value.trim() || 'https://picsum.photos/seed/chan/200/200.jpg',
-            group: document.getElementById('newChannelGroupInput').value || 'General',
+            logo: (logoInp ? logoInp.value.trim() : '') || 'https://picsum.photos/seed/chan/200/200.jpg',
+            group: (groupInp ? groupInp.value : '') || 'General',
             id: Math.random().toString(36).substr(2, 9)
         });
         this.renderNewPlaylistPreview();
@@ -539,35 +546,54 @@ class GAXIPTV {
      */
     setupEventListeners() {
         document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', () => this.switchPage(i.dataset.page)));
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            this.searchQuery = e.target.value;
-            this.renderChannels();
-        });
-
-        document.getElementById('loadBuiltinBtn').addEventListener('click', () => this.loadM3UPlaylist().then(() => {
-            this.renderCategories();
-            this.renderChannels();
-        }));
-
-        document.getElementById('sleepTimerBtn').addEventListener('click', () => this.showDialog('sleepTimerModal'));
-        document.getElementById('addChannelToListBtn').addEventListener('click', () => this.addChannelToPlaylist());
-        document.getElementById('saveNewPlaylistBtn').addEventListener('click', () => this.saveNewPlaylist());
         
-        // Custom select setup
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value;
+                this.renderChannels();
+            });
+        }
+
+        const loadBuiltinBtn = document.getElementById('loadBuiltinBtn');
+        if (loadBuiltinBtn) {
+            loadBuiltinBtn.addEventListener('click', () => this.loadM3UPlaylist().then(() => {
+                this.renderCategories();
+                this.renderChannels();
+            }));
+        }
+
+        const sleepTimerBtn = document.getElementById('sleepTimerBtn');
+        if (sleepTimerBtn) sleepTimerBtn.addEventListener('click', () => this.showDialog('sleepTimerModal'));
+        
+        const addChannelBtn = document.getElementById('addChannelToListBtn');
+        if (addChannelBtn) addChannelBtn.addEventListener('click', () => this.addChannelToPlaylist());
+        
+        const savePlaylistBtn = document.getElementById('saveNewPlaylistBtn');
+        if (savePlaylistBtn) savePlaylistBtn.addEventListener('click', () => this.saveNewPlaylist());
+        
         this.setupCustomSelect('newChannelGroup', 'groupDropdown', 'newChannelGroupInput');
         this.setupCustomSelect('newChannelRes', 'resDropdown', 'newChannelResInput');
         this.setupCustomSelect('newChannelLang', 'langDropdown', 'newChannelLangInput');
 
-        document.getElementById('closeAbout').addEventListener('click', () => this.hideDialog('aboutDialog'));
-        document.getElementById('aboutItem').addEventListener('click', () => this.showDialog('aboutDialog'));
-        document.getElementById('subscribeBtn').addEventListener('click', () => window.open('https://youtube.com/@GamerArnabXYZ'));
+        const closeAbout = document.getElementById('closeAbout');
+        if (closeAbout) closeAbout.addEventListener('click', () => this.hideDialog('aboutDialog'));
         
-        document.getElementById('scanBuiltinBtn').addEventListener('click', () => this.showNotification('Scanner logic requires more resources. Check again later.', 'info'));
+        const aboutItem = document.getElementById('aboutItem');
+        if (aboutItem) aboutItem.addEventListener('click', () => this.showDialog('aboutDialog'));
+        
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        if (subscribeBtn) subscribeBtn.addEventListener('click', () => window.open('https://youtube.com/@GamerArnabXYZ'));
+        
+        const scanBtn = document.getElementById('scanBuiltinBtn');
+        if (scanBtn) scanBtn.addEventListener('click', () => this.showNotification('Scanner logic requires more resources. Check again later.', 'info'));
     }
 
     setupCustomSelect(id, dropId, hidId) {
         const inp = document.getElementById(id);
         const drop = document.getElementById(dropId);
+        if (!inp || !drop) return;
+
         inp.addEventListener('click', (e) => {
             e.stopPropagation();
             drop.parentElement.classList.toggle('active');
@@ -575,7 +601,8 @@ class GAXIPTV {
         drop.querySelectorAll('.custom-select-option').forEach(opt => {
             opt.addEventListener('click', () => {
                 inp.value = opt.textContent;
-                document.getElementById(hidId).value = opt.dataset.value;
+                const hid = document.getElementById(hidId);
+                if (hid) hid.value = opt.dataset.value;
                 drop.parentElement.classList.remove('active');
             });
         });
